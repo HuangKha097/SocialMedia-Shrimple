@@ -1,0 +1,214 @@
+.page-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background: var(--primary-backgroundColor);
+  padding: 1rem;
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    .logo-text {
+      color: var(--primary-color);
+      font-size: 4rem;
+      font-weight: 600;
+    }
+
+    .sub-title {
+      color: var(--primary-textColor);
+      opacity: 0.8;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10rem;
+
+    .sign-in-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #242424;
+      border-radius: 0.8rem;
+      border: 1px solid var(--primary-borderColor);
+      padding: 2rem 3rem;
+      width: 60rem;
+
+      form {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 1rem;
+
+        .title {
+          font-size: 2rem;
+          font-weight: 600;
+          color: var(--primary-textColor);
+          text-align: center;
+          margin-bottom: 1.4rem;
+        }
+
+        .form-row {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          gap: 0.5rem;
+
+          label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.4rem;
+          }
+
+          .input {
+            background-color: transparent;
+            border: 2px solid var(--primary-borderColor);
+            border-radius: 0.8rem;
+            padding: 1.2rem 1.6rem;
+            color: var(--primary-textColor);
+            font-size: 1.4rem;
+            width: 100%;
+            &:focus {
+              outline: none;
+              border-color: var(--primary-color);
+            }
+          }
+        }
+
+        .checkbox-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 0.5rem;
+
+          .remember-section {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.4rem;
+
+            input[type="checkbox"] {
+              width: 1.6rem;
+              height: 1.6rem;
+              background: transparent;
+              border: 2px solid var(--primary-color);
+              border-radius: 0.3rem;
+              accent-color: var(--primary-color);
+              cursor: pointer;
+            }
+          }
+
+          .forgot-password {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            cursor: pointer;
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+
+        button[type="submit"] {
+          background-color: var(--primary-color);
+          color: var(--primary-textColor);
+          border: none;
+          border-radius: 0.8rem;
+          padding: 1.2rem 2rem;
+          font-size: 1.6rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: 0.2s ease;
+          margin-top: 1rem;
+
+          &:hover {
+            opacity: 0.8;
+          }
+        }
+        .error{
+          color: rgba(248, 84, 84, 0.7);
+          font-size: 1.2rem;
+        }
+      }
+
+      .line {
+        margin: 1.6rem 0;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 1.4rem;
+        text-align: center;
+      }
+
+      /* Social Buttons */
+      .social-btn {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        border-radius: 0.8rem;
+        padding: 1.2rem 2rem;
+        font-size: 1.6rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+
+        &.google {
+          margin-bottom: 1rem;
+          background-color: #fff;
+          color: #000;
+
+          &:hover {
+            background-color: #e9e9e9;
+          }
+        }
+
+        &.github {
+          background-color: #1f1f1f;
+          color: #fff;
+          border-color: var(--primary-borderColor);
+          margin-bottom: 1rem;
+
+          &:hover {
+            background-color: #333;
+            border-color: var(--primary-color);
+          }
+        }
+
+        img {
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+
+      p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.4rem;
+        margin-top: 1rem;
+
+        span {
+          color: var(--primary-color);
+          cursor: pointer;
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+
+    .copyright {
+      width: 100%;
+      text-align: center;
+      margin-top: 1rem;
+      color: var(--primary-textColor);
+      opacity: 0.2;
+      font-size: 1.4rem;
+    }
+  }
+}
