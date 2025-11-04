@@ -9,11 +9,14 @@
     --primary-backgroundColor: #1e1e1e;
     --primary-textColor: #f4ffff;
     --primary-borderColor: #303030;
+    --primary-blockBackgroundColor: #242424;
+    --primary-hoverBackgroundColor: #4b3528;
 
 }
 
 /* Common */
 button {
+    cursor: pointer;
 }
 
 

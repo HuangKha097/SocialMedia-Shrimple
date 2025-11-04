@@ -1,0 +1,109 @@
+.slide-bar-wrapper {
+  padding: 1rem;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--primary-blockBackgroundColor);
+  border-right: 2px solid var(--primary-borderColor);
+
+  & .header {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+    .logo {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .logo-text {
+        color: var(--primary-color);
+        font-size: 3rem;
+        font-weight: 600;
+      }
+
+      .menu-btn {
+        background: none;
+        border: none;
+        color: var(--primary-textColor);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+      }
+    }
+
+    & .profile {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+      margin-top: 1.5rem;
+      align-items: center;
+
+
+      .profile-pic {
+        width: 4.6rem;
+        height: 4.6rem;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+
+      .info-wrapper {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-content: flex-start;
+        gap: 0.6rem;
+
+        .full-name {
+          font-size: 1.6rem;
+          color: var(--primary-textColor);
+          font-weight: 500;
+        }
+
+        .username {
+          font-size: 1.4rem;
+          color: var(--primary-textColor);
+          opacity: 0.6;
+        }
+      }
+    }
+  }
+
+
+  & .body {
+
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+
+  & .footer {
+    flex-shrink: 0;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+    .settings-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: center;
+      color: var(--primary-textColor);
+      font-size: 1.4rem;
+      font-weight: 600;
+      opacity: 0.6;
+      cursor: pointer;
+      transition: 0.3s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}

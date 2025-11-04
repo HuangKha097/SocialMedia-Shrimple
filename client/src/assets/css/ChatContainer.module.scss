@@ -1,0 +1,21 @@
+.chat-container-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--primary-backgroundColor);
+
+  & .header {
+    flex-shrink: 0;
+  }
+
+  & .body {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+  }
+
+  & .footer {
+    flex-shrink: 0;
+  }
+}

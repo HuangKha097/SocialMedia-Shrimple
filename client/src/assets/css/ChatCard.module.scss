@@ -1,0 +1,94 @@
+
+.chat-card-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+
+
+  &:hover {
+    background-color: var(--primary-hoverBackgroundColor);
+  }
+}
+
+.avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+
+  .avatar {
+    width: 4.6rem;
+    height: 4.6rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  // (Tùy chọn)  online
+  // .online-status {
+  //   position: absolute;
+  //   bottom: 2px;
+  //   right: 2px;
+  //   width: 1.2rem;
+  //   height: 1.2rem;
+  //   background-color: #34c759; // Màu xanh online
+  //   border: 2px solid #333; // Màu nền
+  //   border-radius: 50%;
+  // }
+}
+
+.info-wrapper {
+  flex-grow: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  .full-name {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--primary-textColor);
+    margin: 0 0 0.3rem 0;
+  }
+
+  .last-message {
+    font-size: 1.3rem;
+    color: var(--primary-textColor);
+    opacity: 0.6;
+    margin: 0;
+
+    // Ngăn text dài quá
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.status-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 100%;
+
+  .time {
+    font-size: 1.2rem;
+    color: var(--primary-textColor);
+    opacity: 0.6;
+    margin: 0;
+  }
+
+  .unread-count {
+    background-color: var(--primary-color);
+    color: var(--primary-textColor);
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    min-width: 2rem;
+    text-align: center;
+  }
+}
