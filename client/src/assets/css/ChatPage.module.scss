@@ -5,8 +5,10 @@
   max-width: 100vw;
   max-height: 100vh;
   background-color: var(--primary-backgroundColor);
+  overflow: hidden;
 
   & .chat-wrapper {
+    position: relative;
     display: flex;
     width: 100%;
     height: 100%;
@@ -24,5 +26,34 @@
       flex: 8;
 
     }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
   }
+
+  .setting-wrapper {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border-radius: 0.8rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: flex-end;
+
+    animation: fadeIn 0.3s ease-out;
+  }
+
+
 }

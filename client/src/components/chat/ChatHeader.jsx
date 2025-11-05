@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-import styles from '../assets/css/ChatHeader.module.scss';
-import profilePic_test from "../../public/favicon.png";
+import styles from '../../assets/css/ChatHeader.module.scss';
+import profilePic_test from "../../../public/favicon.png";
 import {Info, Phone, Video} from 'lucide-react';
 
 const cx = classNames.bind(styles);

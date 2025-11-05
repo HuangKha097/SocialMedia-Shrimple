@@ -1,6 +1,6 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-import styles from '../assets/css/ChatInput.module.scss';
+import styles from '../../assets/css/ChatInput.module.scss';
 import {Paperclip, Send, Smile, Mic, MapPin} from 'lucide-react';
 
 const cx = classNames.bind(styles);

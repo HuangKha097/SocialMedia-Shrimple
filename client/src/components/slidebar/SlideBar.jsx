@@ -1,12 +1,12 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-import styles from '../assets/css/SlideBar.module.scss';
-import profilePic_test from "../../public/favicon.png";
+import styles from '../../assets/css/SlideBar.module.scss';
+import profilePic_test from "../../../public/favicon.png";
 import SlidebarBody from './SlidebarBody.jsx';
 import {Menu} from 'lucide-react';
 
 const cx = classNames.bind(styles);
-const SlideBar = () => {
+const SlideBar = ({onClose}) => {
     return (<div className={cx('slide-bar-wrapper')}>
         <div className={cx("header")}>
 
@@ -29,7 +29,7 @@ const SlideBar = () => {
         </div>
 
         <div className={cx("footer")}>
-            <button className={cx("settings-btn")}>Settings</button>
+            <button className={cx("settings-btn")} onClick={onClose}>Settings</button>
 
         </div>
     </div>);

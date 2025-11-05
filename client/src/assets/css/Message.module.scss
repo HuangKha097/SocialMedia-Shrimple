@@ -13,13 +13,13 @@
     height: 3.6rem;
     border-radius: 50%;
     object-fit: cover;
-    align-self: flex-start;
+    align-self: flex-end;
   }
 
   .message-content {
     display: flex;
     flex-direction: column;
-    max-width: 70%;
+    max-width: 60%;
   }
 
 
@@ -29,12 +29,20 @@
     border-radius: 1.2rem;
 
     .message-text {
-      margin: 0;
+      line-height: 2.6rem;
+      align-self: flex-start;
       font-size: 1.5rem;
       color:  var(--primary-textColor);
-
+      margin-bottom: 0.6rem;
       white-space: pre-wrap; // Giữ ngắt dòng
       word-wrap: break-word; // Tự ngắt từ dài
+    }
+
+    .message-time {
+      font-size: 1.1rem;
+      color: var(--primary-textColor);
+      opacity: 0.4;
+      align-self: flex-start;
     }
   }
 
@@ -44,13 +52,6 @@
     border: 2px solid var(--primary-borderColor);
   }
 
-  .message-time {
-    font-size: 1.1rem;
-    color: var(--primary-textColor);
-    opacity: 0.4;
-    margin: 0.4rem 0 0 0.8rem;
-    align-self: flex-start; // Căn lề thời gian
-  }
 
 
   &.me {
@@ -62,6 +63,7 @@
 
     .message-bubble {
       background-color: var(--primary-color);
+
     }
 
     .message-time {

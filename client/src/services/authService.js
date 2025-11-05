@@ -13,14 +13,26 @@ export const authService = {
         }, {withCredentials: true})
         return res.data;
     },
-    signIn: async (email, password ) => {
+
+    signIn: async (email, password) => {
         const res = await api.post("/api/auth/signin", {
             email,
             password
         }, {withCredentials: true})
         return res.data; // accessToken
     },
-    signOut: async ( ) => {
+
+    signOut: async () => {
         return await api.post("/api/auth/signout", {withCredentials: true})
+    },
+
+    fetchMe: async () => {
+        const res = await api.get("/api/users/me", {withCredentials: true})
+
+        return res.data.user;
+    },
+    refresh: async () => {
+        const res = await api.post("/api/auth/refresh", {withCredentials: true})
+        return res.data.accessToken;
     }
 }

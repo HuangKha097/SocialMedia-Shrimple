@@ -6,7 +6,7 @@ import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useAuthStore} from "../stores/useAuthStore.js";
-import {useNavigate} from "react-router";
+import {replace, useNavigate} from "react-router";
 
 const cx = classNames.bind(styles);
 
@@ -39,6 +39,7 @@ const SignInPage = () => {
 
         try {
             const res = await signIn(email, password)
+
             res && navigate("/");
         } catch (error) {
             console.error(error);
