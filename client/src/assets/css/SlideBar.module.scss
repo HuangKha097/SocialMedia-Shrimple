@@ -7,6 +7,10 @@
   background-color: var(--primary-blockBackgroundColor);
   border-right: 2px solid var(--primary-borderColor);
 
+
+  animation: slideInFromLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+
   & .header {
     flex-shrink: 0;
     display: flex;
@@ -21,19 +25,30 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+
       .logo-text {
         color: var(--primary-color);
         font-size: 3rem;
         font-weight: 600;
       }
 
-      .menu-btn {
-        background: none;
-        border: none;
+      .more-btn {
+        background-color: transparent;
         color: var(--primary-textColor);
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        cursor: pointer;
+        border-radius: 50%;
+        width: 4.2rem;
+        height: 4.2rem;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: var(--primary-hoverBackgroundColor);
+          color: var(--primary-color);
+        }
       }
     }
 
@@ -104,6 +119,32 @@
       &:hover {
         opacity: 0.8;
       }
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #777;
+  }
+
+  @keyframes slideInFromLeft{
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
     }
   }
 }

@@ -11,7 +11,7 @@ import ChatSettings from './ChatSettings';
 
 const cx = classNames.bind(styles);
 
-const SettingContainer = ({onClose, handleLogout}) => {
+const SettingContainer = ({onCloseSetting, handleLogout}) => {
     // --- State để theo dõi tab đang active ---
     // 'account' là giá trị mặc định
     const [activeTab, setActiveTab] = useState('account');
@@ -38,7 +38,7 @@ const SettingContainer = ({onClose, handleLogout}) => {
         <div className={cx('setting-wrapper')}>
             <div className={cx("header")}>
                 <span>Settings</span>
-                <button onClick={onClose}>&times;</button>
+                <button onClick={onCloseSetting}>&times;</button>
             </div>
             <div className={cx("body")}>
 

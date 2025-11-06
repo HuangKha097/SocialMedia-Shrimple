@@ -5,7 +5,7 @@ import profilePic_test from "../../../public/favicon.png";
 import {Info, Phone, Video} from 'lucide-react';
 
 const cx = classNames.bind(styles);
-const ChatHeader = () => {
+const ChatHeader = ({onCloseChatInfo}) => {
     return (
         <div className={cx('header-wrapper')}>
             <div className={cx('user-info')}>
@@ -25,7 +25,7 @@ const ChatHeader = () => {
                 <button className={cx('btn')}>
                     <Video size={16}/>
                 </button>
-                <button className={cx('btn')}>
+                <button className={cx('btn')} onClick={onCloseChatInfo}>
                     <Info size={16}/>
                 </button>
             </div>

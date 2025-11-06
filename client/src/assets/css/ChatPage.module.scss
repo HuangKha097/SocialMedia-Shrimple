@@ -12,13 +12,47 @@
     display: flex;
     width: 100%;
     height: 100%;
-    background-color: #333;
+    background-color: transparent;
     border: 1px solid var(--primary-borderColor);
     border-radius: 0.8rem;
 
     .block-left {
-
       flex: 2;
+
+      animation: fadeIn 0.3s ease-out;
+
+    }
+    .no-slide-bar{
+      border-top-left-radius: 0.8rem;
+      border-bottom-left-radius: 0.8rem;
+      max-width: 50px;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-right: 1px solid var(--primary-borderColor);
+      background-color: var(--primary-backgroundColor);
+
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .more-btn {
+      background-color: transparent;
+      color: var(--primary-textColor);
+      border-radius: 50%;
+      width: 4.2rem;
+      height: 4.2rem;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--primary-hoverBackgroundColor);
+        color: var(--primary-color);
+      }
     }
 
     .block-right {

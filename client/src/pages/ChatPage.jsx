@@ -6,14 +6,15 @@ import SlideBar from "../components/slidebar/SlideBar.jsx";
 import ChatContainer from "../components/chat/ChatContainer.jsx";
 import {useAuthStore} from "../stores/useAuthStore.js";
 import {toast} from "sonner";
-import api from "../lib/axios.js"
 import SettingContainer from "../components/setting/SettingContainer.jsx";
-
+import {ChevronRight} from 'lucide-react';
 
 const cx = classNames.bind(styles);
 const ChatPage = () => {
     const user = useAuthStore((s) => s.user);
     const [isShowSetting, setIsShowSetting] = useState(false);
+    const [isShowSlideBar, setIsShowSlideBar] = useState(true);
+    const [isShowChatInfo, setIisShowChatInfo] = useState(false);
     const signOut = useAuthStore((state) => state.signOut);
     console.log(user);
     // const hadleOnClick = async () => {
@@ -33,25 +34,32 @@ const ChatPage = () => {
             console.log(err)
         }
     }
-    const onClose = () =>{
+    const onCloseSetting = () => {
         setIsShowSetting((prev) => !prev);
     }
-    return (
-        <div className={cx("container")}>
+    const onCloseSlideBar = () => {
+        setIsShowSlideBar((prev) => !prev);
+    }
+    const onCloseChatInfo = () => {
+        setIisShowChatInfo((prev) => !prev);
+    }
+
+    return (<div className={cx("container")}>
             <div className={cx("chat-wrapper")}>
-                <div className={cx("block-left")}>
-                    <SlideBar onClose={onClose} />
-                </div>
+                {isShowSlideBar ? <div className={cx("block-left")}>
+                    <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar}/>
+                </div> : <div className={cx("block-left", "no-slide-bar")}>
+                    <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
+                </div>}
                 <div className={cx("block-right")}>
-                    <ChatContainer/>
+                    <ChatContainer isShowChatInfo={isShowChatInfo} onCloseChatInfo={onCloseChatInfo}/>
                 </div>
 
                 {isShowSetting && <div className={cx("setting-wrapper")}>
-                    <SettingContainer onClose={onClose} handleLogout={handleLogout}/>
+                    <SettingContainer onCloseSetting={onCloseSetting} handleLogout={handleLogout}/>
                 </div>}
             </div>
-        </div>
-    );
+        </div>);
 };
 
 export default ChatPage;

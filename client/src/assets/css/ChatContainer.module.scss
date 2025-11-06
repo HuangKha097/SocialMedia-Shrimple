@@ -1,21 +1,60 @@
+
 .chat-container-wrapper {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+}
+
+.block-left {
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 100%;
-  background-color: var(--primary-backgroundColor);
+  flex: 7;
+  border-right: 1px solid var(--primary-borderColor);
 
-  & .header {
+
+  .header {
     flex-shrink: 0;
   }
 
-  & .body {
+  .body {
     flex-grow: 1;
     overflow: hidden;
     display: flex;
   }
 
-  & .footer {
+  .footer {
     flex-shrink: 0;
   }
 }
+
+
+.block-right {
+  flex: 3;
+  border-top-right-radius:0.8rem ;
+  border-bottom-right-radius:0.8rem ;
+  background-color: var(--primary-blockBackgroundColor);
+  border-left: 1px solid var(--primary-borderColor);
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-info-wrapper {
+  padding: 2.5rem 1.6rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  animation: slideInFromRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow-y: auto;
+}
+@keyframes slideInFromRight {
+  from {
+    /* Bắt đầu từ bên ngoài lề PHẢI */
+    transform: translateX(100%);
+  }
+  to {
+    /* Di chuyển về vị trí 0 */
+    transform: translateX(0);
+  }}
+

@@ -1,0 +1,92 @@
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--primary-textColor);
+  margin-bottom: 2rem;
+  flex-shrink: 0; // Đảm bảo title không bị co lại
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border-radius: 0.8rem;
+  margin-bottom: 2.5rem;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.user-name {
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--primary-textColor);
+}
+
+.user-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.online-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  background-color: #20C997;
+  border-radius: 50%;
+}
+
+.status-text {
+  font-size: 1.4rem;
+  color: var(--primary-textColor);
+  opacity: 0.7;
+}
+
+.media-section,
+.files-section {
+  padding: 1.6rem;
+  background-color:  var(--primary-backgroundColor);
+  border-radius: 0.8rem;
+  margin-bottom: 2.5rem;
+  flex-shrink: 0;
+}
+
+.sub-heading {
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--primary-textColor);
+  margin-bottom: 1.5rem;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.media-item {
+  width: 100%;
+  aspect-ratio: 1 / 1; // Giữ cho ảnh media luôn vuông
+  background-color: var(--primary-blockBackgroundColor); // Ô placeholder
+  border-radius: 0.6rem;
+}
+
+.files-list {
+  .no-files-text {
+    font-size: 1.4rem;
+    color: var(--primary-textColor);
+    opacity: 0.6;
+  }
+}
