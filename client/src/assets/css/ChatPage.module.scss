@@ -88,6 +88,13 @@
 
     animation: fadeIn 0.3s ease-out;
   }
-
+  .copyright {
+    width: 100%;
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--primary-textColor);
+    opacity: 0.2;
+    font-size: 1.4rem;
+  }
 
 }

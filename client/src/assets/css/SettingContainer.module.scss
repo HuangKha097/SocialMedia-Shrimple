@@ -49,11 +49,11 @@
 
 .body {
   display: flex;
-  flex: 1; // Chiếm hết phần không gian còn lại
-  min-height: 0; // Quan trọng cho flex item
+  flex: 1;
+  min-height: 0;
 }
 
-/* --- Cột Menu bên trái --- */
+
 .block-left {
   flex: 3;
   background-color: var(--primary-blockBackgroundColor);
@@ -95,11 +95,10 @@
 
 
 .block-right {
-  flex: 7; // 7 phần
+  flex: 7;
   padding: 2rem;
-  overflow-y: auto; // Thêm thanh cuộn nếu nội dung quá dài
+  overflow-y: auto;
 
-  // Tiêu đề "Account Settings" (h3 trong file con)
   h3 {
     font-size: 2rem;
     font-weight: 600;
@@ -107,11 +106,10 @@
     color: var(--primary-textColor);
   }
 
-  // Các class này được dùng trong AccountSettings.jsx
+
   .section {
     margin-bottom: 2.5rem;
 
-    // Tiêu đề section "Profile Information", "Security"
     h4 {
       font-size: 1.8rem;
       font-weight: 600;
@@ -185,6 +183,63 @@
       opacity: 1;
       border-color: var(--primary-color);
     }
+  }
+  //Switch button
+  .row-layout {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;  // Chiều rộng nút
+    height: 26px; // Chiều cao nút
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+
+
+  input:checked + .slider {
+    background-color: var(--primary-color);
+  }
+
+  input:focus + .slider {
+    box-shadow: var(--primary-hoverBackgroundColor);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(24px);
   }
 
   &::-webkit-scrollbar {

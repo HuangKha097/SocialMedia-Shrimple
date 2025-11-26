@@ -1,13 +1,19 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import SignInPage from "./pages/SignInPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import {Toaster} from "sonner";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
+import {useThemeStore} from "./stores/useThemeStore.js";
 
 
 const App = () => {
+    const {isLight, setTheme} = useThemeStore()
+
+    useEffect(() => {
+        setTheme(isLight);
+    }, [isLight])
     return (
         <>
             <Toaster richColors/>

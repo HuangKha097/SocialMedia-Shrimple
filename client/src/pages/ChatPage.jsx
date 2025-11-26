@@ -45,21 +45,24 @@ const ChatPage = () => {
     }
 
     return (<div className={cx("container")}>
-            <div className={cx("chat-wrapper")}>
-                {isShowSlideBar ? <div className={cx("block-left")}>
-                    <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar}/>
-                </div> : <div className={cx("block-left", "no-slide-bar")}>
-                    <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
-                </div>}
-                <div className={cx("block-right")}>
-                    <ChatContainer isShowChatInfo={isShowChatInfo} onCloseChatInfo={onCloseChatInfo}/>
-                </div>
-
-                {isShowSetting && <div className={cx("setting-wrapper")}>
-                    <SettingContainer onCloseSetting={onCloseSetting} handleLogout={handleLogout}/>
-                </div>}
+        <div className={cx("chat-wrapper")}>
+            {isShowSlideBar ? <div className={cx("block-left")}>
+                <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar}/>
+            </div> : <div className={cx("block-left", "no-slide-bar")}>
+                <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
+            </div>}
+            <div className={cx("block-right")}>
+                <ChatContainer isShowChatInfo={isShowChatInfo} onCloseChatInfo={onCloseChatInfo}/>
             </div>
-        </div>);
+
+            {isShowSetting && <div className={cx("setting-wrapper")}>
+                <SettingContainer onCloseSetting={onCloseSetting} handleLogout={handleLogout}/>
+            </div>}
+        </div>
+        <p className={cx("copyright")}>
+            © 2025 Shrimple. All rights reserved.
+        </p>
+    </div>);
 };
 
 export default ChatPage;
