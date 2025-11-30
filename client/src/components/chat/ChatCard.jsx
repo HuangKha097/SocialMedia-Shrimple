@@ -1,35 +1,30 @@
 import React from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatCard.module.scss';
-import profilePic_test from "../../../public/favicon.png";
+import default_avt from "../../../public/favicon.png";
 
 const cx = classNames.bind(styles);
 
-const ChatCard = ({
-                      name = "Sarah Chen",
-                      lastMessage = "Hey! How's the new projec...",
-                      time = "2m",
-                      unreadCount = 2,
-                      avatar = profilePic_test
-                  }) => {
+const ChatCard = ({convo}) => {
+    console.log(convo);
     return (
         <div className={cx('chat-card-wrapper')}>
             <div className={cx('avatar-wrapper')}>
-                <img src={avatar} alt="avatar" className={cx('avatar')} />
+                <img src={convo.avatarUrl ||  default_avt} alt="avatar" className={cx('avatar')} />
 
             </div>
 
             <div className={cx('info-wrapper')}>
-                <p className={cx('full-name')}>{name}</p>
-                <p className={cx('last-message')}>{lastMessage}</p>
+                <p className={cx('full-name')}>{convo?.lastMessage?.senderId?.displayName}</p>
+                <p className={cx('last-message')}>{convo?.lastMessage?.content}</p>
             </div>
 
             <div className={cx('status-wrapper')}>
-                <p className={cx('time')}>{time}</p>
+                <p className={cx('time')}>{convo.joinedAt}</p>
 
-                {unreadCount > 0 && (
+                {convo.unreadCounts > 0 && (
                     <span className={cx('unread-count')}>
-                        {unreadCount}
+                        {convo.unreadCounts}
                     </span>
                 )}
             </div>

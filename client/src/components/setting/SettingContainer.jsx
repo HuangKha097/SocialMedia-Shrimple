@@ -12,11 +12,10 @@ import ChatSettings from './ChatSettings';
 const cx = classNames.bind(styles);
 
 const SettingContainer = ({onCloseSetting, handleLogout}) => {
-    // --- State để theo dõi tab đang active ---
-    // 'account' là giá trị mặc định
+
     const [activeTab, setActiveTab] = useState('account');
 
-    // --- Hàm để render nội dung tab ---
+
     const renderActiveTab = () => {
         switch (activeTab) {
             case 'account':
@@ -43,9 +42,7 @@ const SettingContainer = ({onCloseSetting, handleLogout}) => {
             <div className={cx("body")}>
 
                 <div className={cx("block-left")}>
-                    {/* Thêm onClick để đổi state
-                        Thêm class 'active' tự động dựa trên state
-                    */}
+
                     <div
                         className={cx("menu-item", {active: activeTab === 'account'})}
                         onClick={() => setActiveTab('account')}

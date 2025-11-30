@@ -1,15 +1,17 @@
 import React from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBar.module.scss';
-import profilePic_test from "../../../public/z7082013609437_01be1980d4294a3a3015105eb317c9b8.jpg";
+import default_avt from "../../../public/favicon.png";
 import SlidebarBody from './SlidebarBody.jsx';
 import {
     ChevronLeft,
-    ChevronRight
 } from 'lucide-react';
+import {useAuthStore} from "../../stores/useAuthStore.js";
 
 const cx = classNames.bind(styles);
 const SlideBar = ({onCloseSetting,onCloseSlideBar}) => {
+    const {user} = useAuthStore()
+    console.log(user)
     return (<div className={cx('slide-bar-wrapper')}>
         <div className={cx("header")}>
 
@@ -18,10 +20,10 @@ const SlideBar = ({onCloseSetting,onCloseSlideBar}) => {
                 <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18}/></button>
             </div>
             <div className={cx('profile')}>
-                <img src={profilePic_test} alt="profile-pic" className={cx('profile-pic')}/>
+                <img src={user?.avatarURL || default_avt} alt="profile-pic" className={cx('profile-pic')}/>
                 <div className={cx("info-wrapper")}>
-                    <p className={cx('full-name')}>Huang Kha</p>
-                    <p className={cx("username")}>@huangkha097</p>
+                    <p className={cx('full-name')}>{user?.displayName}</p>
+                    <p className={cx("username")}>{`@${user?.username}`}</p>
                 </div>
             </div>
         </div>

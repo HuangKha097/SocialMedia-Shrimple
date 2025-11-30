@@ -1,13 +1,13 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-// Import file CSS của component cha để dùng chung class
+
 import styles from '../../assets/css/SettingContainer.module.scss';
 
 const cx = classNames.bind(styles);
 
 const AccountSettings = ({handleLogout}) => {
     return (
-        <> {/* Dùng React Fragment bọc ngoài */}
+        <>
             <h3>Account Settings</h3>
 
             <div className={cx('section')}>

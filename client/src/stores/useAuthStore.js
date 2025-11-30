@@ -2,6 +2,7 @@ import {create} from "zustand";
 import {persist} from "zustand/middleware";
 import {toast} from "sonner";
 import {authService} from "../services/authService.js";
+import {useChatStore} from "./useChatStore.js";
 
 export const useAuthStore = create(
     persist(
@@ -30,12 +31,21 @@ export const useAuthStore = create(
             signIn: async (email, password) => {
                 try {
                     set({loading: true});
+
+                    // xoá dữ liệu cũ, Phòng lỗi user bị văng khi chưa logout
+                    localStorage.clear()
+                    useChatStore.getState().reset()
+
                     const res = await authService.signIn(email, password);
                     const {accessToken, message} = res;
 
+                    if (accessToken) {
+                        localStorage.setItem("accessToken", accessToken);
+                    }
 
                     get().setAccessToken(accessToken);
                     await get().fetchMe();
+                    await useChatStore.getState().fetchConversations()
 
                     toast.success(message || "Sign In successfully!");
                     return {success: true};
@@ -96,7 +106,11 @@ export const useAuthStore = create(
             },
 
 
-            clearState: () => set({accessToken: null, user: null}),
+            clearState: () => {
+                set({user: null,accessToken: null});
+                localStorage.clear()
+                useChatStore.getState().reset()
+            },
             setAccessToken: (accessToken) => set({accessToken}),
 
         }),
@@ -104,8 +118,8 @@ export const useAuthStore = create(
         {
             name: "auth-storage",
             partialize: (state) => ({
-                accessToken: state.accessToken,
                 user: state.user,
+                accessToken: state.accessToken,
             }),
         }
     )
