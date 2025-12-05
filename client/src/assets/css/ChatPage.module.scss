@@ -22,7 +22,8 @@
       animation: fadeIn 0.3s ease-out;
 
     }
-    .no-slide-bar{
+
+    .no-slide-bar {
       border-top-left-radius: 0.8rem;
       border-bottom-left-radius: 0.8rem;
       max-width: 50px;
@@ -88,6 +89,7 @@
 
     animation: fadeIn 0.3s ease-out;
   }
+
   .copyright {
     width: 100%;
     text-align: center;
@@ -97,4 +99,33 @@
     font-size: 1.4rem;
   }
 
+}
+
+.add-friend-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+
+  animation: fadeIn 0.2s ease-out;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

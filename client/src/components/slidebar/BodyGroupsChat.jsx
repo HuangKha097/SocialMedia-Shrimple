@@ -3,15 +3,21 @@ import ChatCard from "../chat/ChatCard.jsx";
 import {useChatStore} from "../../stores/useChatStore.js";
 import GroupChatCard from "../chat/GroupChatCard.jsx";
 
-const BodyGroupsChat = ({groupConversations}) => {
-        console.log("directConversations", groupConversations);
-        return (
+const BodyGroupsChat = ({convo}) => {
+    const {user, activeConversationId} = useChatStore();
+    const groupConversations = convo.filter(c => c.isGroup);
+
+    if (groupConversations.length === 0) {
+        return <div style={{padding: 20, textAlign: 'center', color: '#888'}}>No group yet!</div>;
+    }
+
+    return (
             <>
                 {
-                    groupConversations?.length > 0 &&
-                    groupConversations?.map((convo) => {
+                    convo?.length > 0 &&
+                    convo?.map((convo) => {
                         return (
-                            <GroupChatCard convo={convo} key={convo._id}/>
+                            <GroupChatCard props={convo} key={convo._id}/>
                         )
                     })
                 }

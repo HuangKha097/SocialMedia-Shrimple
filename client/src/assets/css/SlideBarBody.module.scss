@@ -62,6 +62,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
+    line-height: 2rem;
 
     &.active {
       color: var(--primary-color);

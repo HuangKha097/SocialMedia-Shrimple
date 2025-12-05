@@ -46,6 +46,8 @@ export const useAuthStore = create(
                     get().setAccessToken(accessToken);
                     await get().fetchMe();
                     await useChatStore.getState().fetchConversations()
+                    await useChatStore.getState().fetchFriends()
+                    await useChatStore.getState().fetchFriendRequests()
 
                     toast.success(message || "Sign In successfully!");
                     return {success: true};

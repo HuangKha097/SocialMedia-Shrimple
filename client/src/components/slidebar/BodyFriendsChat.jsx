@@ -2,20 +2,28 @@ import React from 'react';
 import ChatCard from "../chat/ChatCard.jsx";
 import {useChatStore} from "../../stores/useChatStore.js";
 
-const BodyFriendsChat = ({directConversations}) => {
-    console.log("directConversations", directConversations);
-    return (
-        <>
-            {
-                directConversations?.length > 0 &&
-                directConversations?.map((convo) => {
-                    return (
-                        <ChatCard convo={convo} key={convo._id } />
-                    )
-                })
-            }
+const BodyFriendsChat = ({convo}) => {
+    const {user, activeConversationId} = useChatStore();
 
-        </>
+    // if (!user) return null;
+
+    console.log("cxcx", convo)
+    const friendConversations = convo.filter(c => !c.isGroup);
+
+    if (friendConversations.length === 0) {
+        return <div style={{padding: 20, textAlign: 'center', color: '#888'}}>No friend yet!</div>;
+    }
+
+    return (
+        <div className="chat-list">
+            {convo.length > 0 &&convo.map((c) =>
+                <ChatCard
+                    key={c._id}
+                    props={c}
+                />
+            )}
+
+        </div>
     );
 };
 

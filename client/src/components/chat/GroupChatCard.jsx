@@ -1,15 +1,17 @@
 import React from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatCard.module.scss';
-import default_avt from "../../../public/favicon.png"; // Ảnh mặc định nếu user không có avatar
+import default_avt from "../../../public/favicon.png";
+import {useChatStore} from "../../stores/useChatStore.js"; // Ảnh mặc định nếu user không có avatar
 
 const cx = classNames.bind(styles);
 
-const ChatCard = ({ convo }) => {
+const ChatCard = ({props}) => {
+    const {setActiveConversationId, activeConversationId} = useChatStore();
     // 1. Phân tách dữ liệu cho gọn
-    const groupInfo = convo?.group;
-    const participants = convo?.participants || [];
-    const lastMessage = convo?.lastMessage;
+    const groupInfo = props?.group;
+    const participants = props?.participants || [];
+    const lastMessage = props?.lastMessage;
 
     // 2. Hàm format thời gian đơn giản (Ví dụ: 10:30 hoặc 20/10)
     const formatTime = (dateString) => {
@@ -19,10 +21,10 @@ const ChatCard = ({ convo }) => {
 
         // Nếu là ngày hôm nay thì hiện giờ
         if (date.toDateString() === now.toDateString()) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
         }
         // Khác ngày thì hiện ngày/tháng
-        return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        return date.toLocaleDateString([], {day: '2-digit', month: '2-digit'});
     };
 
     // 3. Logic hiển thị Avatar
@@ -62,12 +64,19 @@ const ChatCard = ({ convo }) => {
         }
 
         // Fallback: Nếu không có ai (trường hợp hiếm)
-        return <img src={default_avt} alt="default" className={cx('avatar', 'single-avatar')} />;
+        return <img src={default_avt} alt="default" className={cx('avatar', 'single-avatar')}/>;
     };
 
     return (
-        <div className={cx('chat-card-wrapper')}>
-            {/* Cột trái: Avatar */}
+        <div
+            className={cx('chat-card-wrapper', {active: (Boolean(activeConversationId) && props._id === activeConversationId)})}
+            onClick={() => setActiveConversationId(props._id)}
+            style={{
+                cursor: 'pointer',
+                border: (Boolean(activeConversationId) && props._id === activeConversationId) ? "2px solid var(--primary-color)" : "none"
+            }}
+        >
+
             <div className={cx('avatar-wrapper')}>
                 {renderAvatar()}
             </div>
@@ -78,7 +87,7 @@ const ChatCard = ({ convo }) => {
                     {groupInfo?.name || "Unnamed Group"}
                 </p>
 
-                <p className={cx('last-message', { 'unseen': convo.unreadCounts > 0 })}>
+                <p className={cx('last-message', {'unseen': props?.unreadCounts > 0})}>
                     {/* Xử lý hiển thị nội dung tin nhắn */}
                     {lastMessage
                         ? (
@@ -95,11 +104,11 @@ const ChatCard = ({ convo }) => {
             {/* Cột phải: Thời gian & Số tin chưa đọc */}
             <div className={cx('status-wrapper')}>
                 {/* Dùng updatedAt hoặc lastMessageAt */}
-                <p className={cx('time')}>{formatTime(convo.updatedAt || convo.lastMessageAt)}</p>
+                <p className={cx('time')}>{formatTime(props?.updatedAt || props?.lastMessageAt)}</p>
 
-                {convo.unreadCounts > 0 && (
+                {props?.unreadCounts > 0 && (
                     <span className={cx('unread-badge')}>
-                        {convo.unreadCounts > 9 ? '9+' : convo.unreadCounts}
+                        {props?.unreadCounts > 9 ? '9+' : props?.unreadCounts}
                     </span>
                 )}
             </div>
