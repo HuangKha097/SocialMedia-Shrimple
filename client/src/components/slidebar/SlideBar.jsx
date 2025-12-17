@@ -3,11 +3,11 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBar.module.scss';
 import default_avt from "../../../public/favicon.png";
 import SlidebarBody from './SlidebarBody.jsx';
-import {ChevronLeft,UserPlus} from 'lucide-react';
+import {ChevronLeft, UserPlus, Users} from 'lucide-react';
 import {useAuthStore} from "../../stores/useAuthStore.js";
 
 const cx = classNames.bind(styles);
-const SlideBar = ({onCloseSetting, onCloseSlideBar,onCloseAddFriendPopup}) => {
+const SlideBar = ({onCloseSetting, onCloseSlideBar,onCloseAddFriendPopup,onCloseCreateGroupPopup}) => {
     const {user} = useAuthStore()
     console.log(user)
     return (<div className={cx('slide-bar-wrapper')}>
@@ -25,7 +25,8 @@ const SlideBar = ({onCloseSetting, onCloseSlideBar,onCloseAddFriendPopup}) => {
                         <p className={cx("username")}>{`@${user?.username}`}</p>
                     </div>
                 </div>
-                <button className={cx("add-friend-btn")} onClick={onCloseAddFriendPopup} ><UserPlus size={18}/></button>
+            <button className={cx("add-friend-btn")} onClick={onCloseAddFriendPopup} ><UserPlus size={18}/></button>
+            <button className={cx("add-friend-btn")} onClick={onCloseCreateGroupPopup} ><Users size={18}/></button>
             </div>
         </div>
 

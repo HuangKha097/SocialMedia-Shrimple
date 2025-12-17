@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'; // Nhớ import useEffect
+import React, { useEffect, useMemo } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBarBody.module.scss';
 import { NavLink, Route, Routes } from 'react-router-dom';
@@ -7,46 +7,68 @@ import BodyFriendsChat from "./BodyFriendsChat.jsx";
 import BodyGroupsChat from "./BodyGroupsChat.jsx";
 import BodyRequests from "./BodyRequests.jsx";
 import { useChatStore } from "../../stores/useChatStore.js";
+import { useAuthStore } from "../../stores/useAuthStore.js";
 
 const cx = classNames.bind(styles);
 
 const SlidebarBody = () => {
-    // 1. Lấy thêm fetchFriends
     const { conversations, friendRequests, friends, fetchFriends } = useChatStore();
+    const { user } = useAuthStore();
 
-    // 2. Thêm useEffect: Luôn gọi API lấy bạn bè khi component này được render
     useEffect(() => {
-        fetchFriends();
+        if (fetchFriends) fetchFriends();
     }, [fetchFriends]);
 
-    // 3. LOGIC GỘP THÔNG MINH (Tránh trùng lặp giữa Friend và Conversation)
-    // Mục tiêu: Hiển thị tất cả bạn bè.
-    // - Nếu đã từng chat: Dùng object conversation (để hiện tin nhắn cuối).
-    // - Nếu chưa chat: Dùng object friend (để hiện tên, avatar).
+    // LOGIC LỌC TRÙNG LẶP QUAN TRỌNG
+    const combinedList = useMemo(() => {
+        if (!user) return [];
 
-    const combinedList = React.useMemo(() => {
-        // A. Lấy danh sách ID của những người đã có trong cuộc trò chuyện (cá nhân)
-        const conversationPartnerIds = new Set();
-        const directConvos = conversations.filter(c => !c.isGroup).map(c => {
-            // Giả sử participants[1] là người kia, hoặc logic tìm partner của bạn
-            // Lưu lại ID để tí nữa so sánh
-            c.participants.forEach(p => conversationPartnerIds.add(p._id));
-            return c;
+        const processedPartnerIds = new Set();
+        const uniqueConversations = [];
+
+        // 1. Sắp xếp conversations
+        const sortedConversations = [...conversations].sort((a, b) => {
+            const dateA = new Date(a.lastMessageAt || a.updatedAt || 0);
+            const dateB = new Date(b.lastMessageAt || b.updatedAt || 0);
+            return dateB - dateA;
         });
 
-        // B. Lọc ra những người bạn CHƯA có cuộc trò chuyện nào
-        const friendsNoChat = friends.filter(friend => !conversationPartnerIds.has(friend._id)).map(friend => ({
-            _id: `temp_${friend._id}`, // ID tạm
-            isGroup: false,
-            participants: [friend], // Giả lập cấu trúc participants
-            lastMessage: null,
-            unreadCounts: {}
-        }));
+        // 2. Lặp qua danh sách đã sắp xếp để lọc trùng
+        sortedConversations.forEach(c => {
+            if (c.isGroup) return; // Group xử lý riêng
 
-        // C. Gộp lại: Conversation thật + Friend chưa chat
-        return [...directConvos, ...friendsNoChat];
-    }, [conversations, friends]);
+            // --- FIX: Thêm kiểm tra an toàn cho participants ---
+            if (!c.participants || !Array.isArray(c.participants)) {
+                return; // Bỏ qua nếu participants không tồn tại hoặc không phải mảng
+            }
 
+            // Tìm người chat cùng (Partner)
+            const partner = c.participants.find(p => p._id !== user._id);
+
+            if (partner) {
+                if (!processedPartnerIds.has(partner._id)) {
+                    processedPartnerIds.add(partner._id);
+                    uniqueConversations.push(c);
+                }
+            }
+        });
+
+        // 3. Gộp thêm những người bạn CHƯA từng chat
+        const friendsNoChat = friends
+            .filter(friend => !processedPartnerIds.has(friend._id))
+            .map(friend => ({
+                _id: `temp_${friend._id}`,
+                isGroup: false,
+                participants: [friend],
+                lastMessage: null,
+                unreadCounts: 0,
+                updatedAt: 0
+            }));
+
+        return [...uniqueConversations, ...friendsNoChat];
+    }, [conversations, friends, user]);
+
+    // Lọc Group riêng
     const groupConversations = conversations?.filter((convo) => convo.isGroup) || [];
 
     const countFriends = combinedList.length;
@@ -71,7 +93,6 @@ const SlidebarBody = () => {
             <div className={cx("slidebar-body-list")}>
                 <Routes>
                     <Route path="" element={<Navigate to="/friends-slide" replace />} />
-                    {/* Truyền combinedList vào đây */}
                     <Route path="friends-slide" element={<BodyFriendsChat convo={combinedList} />} />
                     <Route path="groups-slide" element={<BodyGroupsChat convo={groupConversations} />} />
                     <Route path="requests-slide" element={<BodyRequests friendRequests={friendRequests} />} />

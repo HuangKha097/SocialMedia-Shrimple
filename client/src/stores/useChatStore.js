@@ -1,22 +1,24 @@
 import {create} from "zustand";
 import {persist} from "zustand/middleware";
 import {chatService} from "../services/chatService.js";
-import {friendService} from "../services/friendService.js"; // 1. Import thêm service
+import {friendService} from "../services/friendService.js";
+import {useAuthStore} from "./useAuthStore.js"; // 1. Import thêm service
 
 
 export const useChatStore = create(
     persist(
         (set, get) => ({
-            // --- CODE CŨ ---
+
             conversations: [],
             messages: {},
             activeConversationId: null,
-            loading: false, // Loading của Chat
+            loading: false, // convo loading
+            messageLoading: false,
+            isCreatingGroup: false,
 
-            // --- CODE MỚI THÊM (State) ---
             friends: [],
             friendRequests: [],
-            isFriendRequestsLoading: false, // Loading riêng cho Friend Request
+            isFriendRequestsLoading: false,
 
             setActiveConversationId: (id) => set({activeConversationId: id}),
 
@@ -26,7 +28,8 @@ export const useChatStore = create(
                     messages: {},
                     activeConversationId: null,
                     loading: false,
-                    // Reset thêm phần mới
+                    messageLoading: false,
+
                     friendRequests: [],
                     isFriendRequestsLoading: false,
                 });
@@ -34,23 +37,20 @@ export const useChatStore = create(
 
             fetchConversations: async () => {
                 try {
-                    set({loading: true});
-
                     const {conversations} = await chatService.fetchConversations();
-
                     set({
                         conversations: conversations,
                         loading: false
                     });
+
                 } catch (error) {
                     console.error("Error during fetching conversations", error);
                     set({loading: false});
                 }
             },
-
             fetchFriendRequests: async () => {
                 try {
-                    set({ isFriendRequestsLoading: true });
+                    set({isFriendRequestsLoading: true});
 
                     const data = await friendService.getFriendRequests();
 
@@ -67,31 +67,24 @@ export const useChatStore = create(
                     });
                 }
             },
-
             declineRequestAction: async (requestId) => {
                 try {
-                    // 1. Gọi API Backend (API decline trả về 204 No Content)
-                    await friendService.declineRequest(requestId);
 
-                    // 2. Nếu API thành công, tự động xóa khỏi danh sách trong Store
+                    await friendService.declineRequest(requestId);
                     set((state) => ({
                         friendRequests: state.friendRequests.filter((req) => req._id !== requestId)
                     }));
-
-                    // Trả về true để Component biết là thành công (nếu cần hiển thị Toast)
                     return true;
                 } catch (error) {
                     console.error("Error declining request:", error);
-                    throw error; // Ném lỗi ra để Component hiện Toast lỗi
+                    throw error;
                 }
             },
-
-            // Tương tự cho Accept
             acceptRequestAction: async (requestId) => {
                 try {
                     await friendService.acceptRequest(requestId);
 
-                    // Xóa khỏi danh sách chờ (vì đã thành bạn rồi)
+
                     set((state) => ({
                         friendRequests: state.friendRequests.filter((req) => req._id !== requestId)
                     }));
@@ -105,18 +98,238 @@ export const useChatStore = create(
                 try {
                     const data = await friendService.getFriends();
                     // API trả về { friends: [...] }
-                    set({ friends: data.friends || [] });
+                    set({friends: data.friends || []});
                 } catch (error) {
                     console.error("Error fetching friends:", error);
-                    set({ friends: [] });
+                    set({friends: []});
                 }
             },
 
-            // Hàm remove thuần túy (giữ lại nếu cần dùng cho socket sau này)
             removeFriendRequest: (requestId) => {
                 set((state) => ({
                     friendRequests: state.friendRequests.filter((req) => req._id !== requestId)
                 }));
+            },
+            fetchMessages: async (conversationId) => {
+                const {activeConversationId, messages} = get();
+                const {user} = useAuthStore.getState()
+
+                const convoId = conversationId ?? activeConversationId;
+
+                if (!convoId) return;
+
+                const current = messages?.[convoId];
+
+                const nextCursor = current?.nextCursor === undefined ? "" : current?.nextCursor;
+
+                if (nextCursor === null) return;
+
+                set({messageLoading: true});
+
+                try {
+                    const {messages: fetched, cursor} = await chatService.fetchMessage(conversationId, nextCursor);
+
+                    const processed = fetched.map((m) => ({
+                        ...m,
+                        isOwn: m.senderId === user?._id,
+                    }))
+                    set((state) => {
+                        const prev = state.messages[convoId]?.item ?? [];
+                        const merged = prev.length > 0 ? [...processed, ...prev] : processed;
+
+                        return {
+                            messages: {
+                                ...state.messages,
+                                [convoId]: {
+                                    items: merged,
+                                    hasMore: !!cursor,
+                                    nextCursor: cursor ?? null,
+                                }
+                            }
+                        }
+                    })
+                } catch (error) {
+                    console.error("Error declining message:", error);
+                } finally {
+                    set({messageLoading: false});
+                }
+            },
+            sendDirectMessage: async (recipientId, content, conversationId) => {
+                const { user } = useAuthStore.getState();
+                const { activeConversationId } = get();
+
+                // Xác định conversationId gửi đi (ưu tiên tham số truyền vào, sau đó đến activeId)
+                // Lưu ý: Nếu activeId là "temp_...", ta gửi conversationId = null lên server
+                let targetConvoId = conversationId || activeConversationId;
+                if (targetConvoId && targetConvoId.toString().startsWith('temp_')) {
+                    targetConvoId = null;
+                }
+
+                try {
+                    // 1. Gọi API
+                    const response = await chatService.sendDirectMessage(recipientId, content, targetConvoId);
+                    const newMessage = response.message;
+
+                    // 2. Xác định ID cuộc trò chuyện thực sự sau khi server trả về
+                    const realConversationId = newMessage.conversationId;
+
+                    // 3. Xử lý tin nhắn mới (Thêm isOwn = true vì mình vừa gửi)
+                    const processedMessage = {
+                        ...newMessage,
+                        isOwn: true,
+                        senderId: user?._id // Đảm bảo có senderId để render avatar nếu cần
+                    };
+
+                    set((state) => {
+                        // A. Cập nhật Messages State
+                        const existingMessages = state.messages[realConversationId]?.items || [];
+                        const updatedMessages = [...existingMessages, processedMessage];
+
+                        // B. Cập nhật Conversations State (Danh sách bên trái)
+                        let updatedConversations = [...state.conversations];
+                        const convoIndex = updatedConversations.findIndex(c => c._id === realConversationId);
+
+                        if (convoIndex !== -1) {
+                            // Trường hợp 1: Cuộc trò chuyện ĐÃ CÓ trong danh sách
+                            // -> Cập nhật lastMessage và đưa lên đầu
+                            const updatedConvo = {
+                                ...updatedConversations[convoIndex],
+                                lastMessage: {
+                                    content: processedMessage.content,
+                                    createdAt: processedMessage.createdAt,
+                                    senderId: user?._id // Hoặc object user nếu schema yêu cầu
+                                },
+                                updatedAt: new Date().toISOString(), // Để sort
+                                lastMessageAt: new Date().toISOString()
+                            };
+
+                            // Xoá vị trí cũ, thêm vào đầu
+                            updatedConversations.splice(convoIndex, 1);
+                            updatedConversations.unshift(updatedConvo);
+
+                            return {
+                                messages: {
+                                    ...state.messages,
+                                    [realConversationId]: {
+                                        ...state.messages[realConversationId],
+                                        items: updatedMessages
+                                    }
+                                },
+                                conversations: updatedConversations
+                            };
+                        } else {
+                            // Trường hợp 2: Cuộc trò chuyện MỚI (chưa có trong list conversations)
+                            // -> Đây chính là lúc gây ra lỗi duplicate nếu không xử lý kỹ.
+                            // -> Cách an toàn nhất: Gọi fetchConversations để lấy full data (avatar, name partner...)
+                            // -> Cập nhật messages trước để hiện tin nhắn ngay
+
+                            // Trigger fetch lại conversation ngầm
+                            get().fetchConversations();
+
+                            // Nếu trước đó đang ở state 'temp_', cần chuyển activeConversationId sang ID thật
+                            if (activeConversationId && activeConversationId.toString().startsWith('temp_')) {
+                                return {
+                                    activeConversationId: realConversationId, // Chuyển sang ID thật
+                                    messages: {
+                                        ...state.messages,
+                                        [realConversationId]: { items: [processedMessage], hasMore: false, nextCursor: null }
+                                    }
+                                };
+                            }
+
+                            return {
+                                messages: {
+                                    ...state.messages,
+                                    [realConversationId]: { items: updatedMessages, hasMore: false, nextCursor: null }
+                                }
+                            };
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("Failed to send message:", error);
+                    // Có thể thêm toast error ở đây
+                    throw error;
+                }
+            },
+            createConversation: async (isGroup, name, memberIds) => {
+                set({ isCreatingGroup: true });
+                try {
+                    // Gọi API từ chatService
+                    const newConversation = await chatService.createConversation(isGroup, name, memberIds);
+
+                    set((state) => ({
+                        // Thêm cuộc trò chuyện mới vào đầu danh sách
+                        conversations: [newConversation, ...state.conversations],
+                        // Tự động chuyển sang cuộc trò chuyện mới vừa tạo (tuỳ chọn)
+                        activeConversationId: newConversation._id,
+                        isCreatingGroup: false
+                    }));
+
+                    return newConversation;
+                } catch (error) {
+                    console.error("Error creating conversation:", error);
+                    set({ isCreatingGroup: false });
+                    throw error; // Ném lỗi để UI (CreateGroupPopup) bắt và hiện Toast
+                }
+            },
+            sendGroupMessage: async (conversationId, content) => {
+                const { user } = useAuthStore.getState();
+
+                try {
+                    // 1. Gọi API gửi tin nhắn nhóm
+                    const response = await chatService.sendGroupMessage(conversationId, content);
+                    const newMessage = response.message;
+
+                    // 2. Tạo object tin nhắn để update UI ngay lập tức
+                    const processedMessage = {
+                        ...newMessage,
+                        isOwn: true, // Đánh dấu là tin nhắn của mình
+                        senderId: user?._id
+                    };
+
+                    set((state) => {
+                        // A. Cập nhật danh sách Messages
+                        const existingMessages = state.messages[conversationId]?.items || [];
+                        const updatedMessages = [...existingMessages, processedMessage];
+
+                        // B. Cập nhật danh sách Conversations (Đưa nhóm lên đầu)
+                        let updatedConversations = [...state.conversations];
+                        const convoIndex = updatedConversations.findIndex(c => c._id === conversationId);
+
+                        if (convoIndex !== -1) {
+                            const updatedConvo = {
+                                ...updatedConversations[convoIndex],
+                                lastMessage: {
+                                    content: content,
+                                    createdAt: new Date().toISOString(),
+                                    senderId: user?._id
+                                },
+                                updatedAt: new Date().toISOString(),
+                                lastMessageAt: new Date().toISOString()
+                            };
+
+                            // Xoá vị trí cũ, đưa lên đầu mảng
+                            updatedConversations.splice(convoIndex, 1);
+                            updatedConversations.unshift(updatedConvo);
+                        }
+
+                        return {
+                            messages: {
+                                ...state.messages,
+                                [conversationId]: {
+                                    ...state.messages[conversationId],
+                                    items: updatedMessages
+                                }
+                            },
+                            conversations: updatedConversations
+                        };
+                    });
+
+                } catch (error) {
+                    console.error("Failed to send group message:", error);
+                    throw error;
+                }
             },
         }),
 

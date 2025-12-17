@@ -8,8 +8,6 @@
   display: flex;
   flex-direction: column;
   color: var(--primary-textColor);
-
-
   animation: scaleUp 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -23,7 +21,6 @@
     opacity: 1;
   }
 }
-
 
 .header {
   display: flex;
@@ -56,7 +53,6 @@
     }
   }
 }
-
 
 .search-wrapper {
   display: flex;
@@ -110,7 +106,6 @@
   gap: 0.5rem;
   padding-right: 5px;
 
-
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -125,26 +120,13 @@
   }
 }
 
+/* Đã xóa .spinner và @keyframes spin ở đây */
+
 .loading-state, .empty-state {
   text-align: center;
   color: #B0B0B0FF;
   padding: 2rem 0;
   font-size: 1.4rem;
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-  color: var(--primary-color);
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .user-item {
@@ -155,7 +137,6 @@
   border-radius: 6px;
   transition: background-color 0.2s;
   border: 1px solid transparent;
-
 
   &:hover {
     background-color: var(--primary-hoverBackgroundColor);
@@ -189,7 +170,7 @@
 
       .email {
         font-size: 1.2rem;
-        color: #B0B0B0FF; // Màu chữ phụ
+        color: #B0B0B0FF;
         margin: 0;
       }
     }
@@ -201,7 +182,7 @@
     gap: 0.5rem;
     background-color: transparent;
     color: var(--primary-color);
-    border: 1px solid var(--primary-color); // Style nút outline
+    border: 1px solid var(--primary-color);
     padding: 0.6rem 1.2rem;
     border-radius: 6px;
     font-size: 1.2rem;

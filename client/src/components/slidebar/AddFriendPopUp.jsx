@@ -1,36 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/AddFriendPopUp.module.scss';
-import { Loader2, Search, UserPlus, X, Check, UserCheck } from 'lucide-react';
+import { Search, UserPlus, X, Check, UserCheck, Loader2 } from 'lucide-react';
 import default_avt from "../../../public/favicon.png";
 
 import { userService } from "../../services/userService.js";
 import { useChatStore } from "../../stores/useChatStore.js";
+import { useAuthStore } from "../../stores/useAuthStore.js";
+import { friendService } from "../../services/friendService.js";
 import { toast } from "sonner";
 
-// --- SỬA LỖI: CHUYỂN DÒNG IMPORT NÀY RA NGOÀI ---
-import { friendService } from "../../services/friendService.js";
+// Import component LoadingSpin chung (Kiểm tra lại đường dẫn file của bạn)
+import LoadingSpin from "../common/loading/LoadingSpin.jsx";
 
 const cx = classNames.bind(styles);
 
 const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
-    // 1. Lấy friends và action sendRequest từ Store
-    const {
-        friends,
-        fetchFriends,
-    } = useChatStore();
+    // 1. Lấy friends và action từ Store
+    const { friends, fetchFriends } = useChatStore();
+    const { user: currentUser } = useAuthStore();
 
     const [keyword, setKeyword] = useState('');
     const [isLoadingSearch, setIsLoadingSearch] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
 
-    // State lưu trạng thái
+    // State lưu trạng thái gửi lời mời
     const [sentRequests, setSentRequests] = useState({});
     const [pendingRequests, setPendingRequests] = useState({});
 
-    // 2. Load danh sách bạn bè khi mở popup
+    // 2. Load danh sách bạn bè khi mở popup để check trạng thái
     useEffect(() => {
-        // Kiểm tra nếu hàm tồn tại mới gọi (đề phòng chưa update store)
         if (fetchFriends) {
             fetchFriends();
         }
@@ -45,7 +44,8 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
 
         try {
             const data = await friendService.findUserByUsername(keyword);
-            setSearchResults(data);
+            // Lọc bỏ chính mình khỏi kết quả tìm kiếm
+            setSearchResults(data.filter((item) => item._id !== currentUser._id ));
         } catch (error) {
             console.error(error);
             toast.error("Lỗi tìm kiếm");
@@ -94,30 +94,30 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
                     className={cx('search-input')}
                 />
                 <button type="submit" className={cx('search-btn')} disabled={isLoadingSearch}>
-                    {isLoadingSearch ? <Loader2 className={cx('spinner')} size={20} /> : <Search size={20}/>}
+                    {/* Giữ Loader2 ở đây vì nút nhỏ, LoadingSpin có padding lớn */}
+                    {isLoadingSearch ? <Loader2 className={cx('btn-spinner')} size={20} /> : <Search size={20}/>}
                 </button>
             </form>
 
-            <div className={cx('divider')}></div>
-
             <div className={cx('results-list')}>
 
-                {/* Loading State */}
+                {/* CASE 1: Đang Loading -> Dùng LoadingSpin */}
                 {isLoadingSearch && (
-                    <div style={{textAlign: 'center', padding: '20px', color: '#888'}}>
-                        <Loader2 className={cx('spinner')} size={24} style={{margin: '0 auto 10px'}}/>
+                    <div className={cx('loading-state')}>
+                        <LoadingSpin size={30} />
                         <p>Searching...</p>
                     </div>
                 )}
 
-                {/* Empty State */}
+                {/* CASE 2: Không tìm thấy kết quả */}
                 {!isLoadingSearch && searchResults.length === 0 && keyword && (
-                    <p style={{textAlign: 'center', padding: '20px', color: '#888'}}>No user found.</p>
+                    <div className={cx('empty-state')}>
+                        No user found with username "{keyword}"
+                    </div>
                 )}
 
-                {/* List Users */}
+                {/* CASE 3: Hiển thị danh sách */}
                 {!isLoadingSearch && searchResults.map((user) => {
-                    // 3. LOGIC KIỂM TRA BẠN BÈ (Dùng safeFriends để không bị lỗi crash)
                     const isFriend = safeFriends.some((f) => f._id === user._id);
                     const isSent = sentRequests[user._id];
                     const isPending = pendingRequests[user._id];
@@ -141,7 +141,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
                                 disabled={isSent || isFriend || isPending}
                             >
                                 {isPending ? (
-                                    <Loader2 className={cx('spinner')} size={18} />
+                                    <Loader2 className={cx('btn-spinner')} size={18} />
                                 ) : isFriend ? (
                                     <>
                                         <UserCheck size={18} />

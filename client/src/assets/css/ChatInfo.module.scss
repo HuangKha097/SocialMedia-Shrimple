@@ -1,38 +1,51 @@
+// ChatInfo.module.scss
 
+// Header Title
 .title {
   font-size: 2.2rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary-textColor);
   margin-bottom: 2rem;
-  flex-shrink: 0; // Đảm bảo title không bị co lại
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--primary-borderColor, rgba(128, 128, 128, 0.2));
+  flex-shrink: 0;
 }
 
+// 1. PROFILE SECTION (User Info / Group Info)
 .profile-section {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  border-radius: 0.8rem;
+  padding: 1rem;
+  background-color: var(--secondary-backgroundColor, rgba(0, 0, 0, 0.03)); // Thêm nền nhẹ
+  border-radius: 1.2rem;
   margin-bottom: 2.5rem;
   flex-shrink: 0;
 }
 
 .avatar {
-  width: 5rem;
-  height: 5rem;
+  width: 6rem; // Tăng kích thước avatar chính một chút
+  height: 6rem;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--primary-backgroundColor); // Viền nhẹ tách nền
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  overflow: hidden; // Tránh text tràn
 }
 
 .user-name {
   font-size: 1.8rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--primary-textColor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-status {
@@ -42,51 +55,180 @@
 }
 
 .online-dot {
-  width: 0.9rem;
-  height: 0.9rem;
-  background-color: #20C997;
+  width: 0.8rem;
+  height: 0.8rem;
+  background-color: #20C997; // Green
   border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--primary-backgroundColor);
 }
 
 .status-text {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: var(--primary-textColor);
   opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+// 2. SHARED SECTIONS (General Style for Members, Media, Files)
+.members-section,
 .media-section,
 .files-section {
-  padding: 1.6rem;
-  background-color:  var(--primary-backgroundColor);
-  border-radius: 0.8rem;
   margin-bottom: 2.5rem;
   flex-shrink: 0;
 }
 
 .sub-heading {
-  font-size: 1.6rem;
-  font-weight: 500;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--primary-textColor);
-  margin-bottom: 1.5rem;
+  opacity: 0.8;
+  margin-bottom: 1.2rem;
 }
 
+// 3. MEMBERS LIST (Dành cho Group Chat)
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-height: 200px; // Giới hạn chiều cao, nếu đông thành viên sẽ scroll
+  overflow-y: auto;
+  padding-right: 0.5rem;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.3);
+    border-radius: 4px;
+  }
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--secondary-backgroundColor, rgba(0, 0, 0, 0.05));
+  }
+}
+
+.member-avatar {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.member-name {
+  font-size: 1.4rem;
+  color: var(--primary-textColor);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 4. MEDIA GRID
 .media-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .media-item {
   width: 100%;
-  aspect-ratio: 1 / 1; // Giữ cho ảnh media luôn vuông
-  background-color: var(--primary-blockBackgroundColor); // Ô placeholder
-  border-radius: 0.6rem;
+  aspect-ratio: 1 / 1;
+  background-color: var(--secondary-backgroundColor, #e0e0e0);
+  border-radius: 0.8rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
+// 5. FILES LIST
 .files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
   .no-files-text {
     font-size: 1.4rem;
+    font-style: italic;
     color: var(--primary-textColor);
-    opacity: 0.6;
+    opacity: 0.5;
+    text-align: center;
+    padding: 1rem 0;
+  }
+}
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background-color: var(--secondary-backgroundColor, rgba(0, 0, 0, 0.03));
+  border-radius: 1.2rem;
+  margin-bottom: 2.5rem;
+  flex-shrink: 0;
+}
+
+// Wrapper để giữ vị trí
+.avatar-wrapper {
+  width: 6rem;
+  height: 6rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 1. Avatar đơn (1-1 hoặc Group có ảnh)
+.avatar {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-backgroundColor);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+// 2. Avatar Stack (Group chưa có ảnh)
+.group-avatar-stack {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+
+  .stack-avatar {
+    position: absolute;
+    width: 4rem; // Nhỏ hơn container
+    height: 4rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-backgroundColor); // Viền trùng màu nền để cắt ảnh dưới
+
+    &.first {
+      bottom: 0;
+      right: 0;
+      z-index: 2;
+    }
+
+    &.second {
+      top: 0;
+      left: 0;
+      z-index: 1;
+      opacity: 0.9;
+    }
   }
 }

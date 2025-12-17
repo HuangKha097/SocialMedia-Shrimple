@@ -11,7 +11,8 @@ const Message = ({
                      senderName,
                      avatar = profilePic_test,
                      isMe = false,
-                     image = null
+                     image = null,
+                     isGroup = false // 1. Nhận thêm prop này
                  }) => {
     return (
         <div className={cx('message-wrapper', {me: isMe})}>
@@ -19,10 +20,14 @@ const Message = ({
 
             <div className={cx('message-content')}>
 
+                {/* 2. Chỉ hiện tên nếu không phải mình VÀ là chat Group */}
+                {(!isMe && isGroup && senderName) && (
+                    <p className={cx('sender-name')}>{senderName}</p>
+                )}
+
                 {image ? (
                     <img src={image} alt="chat-content" className={cx('message-image')}/>
                 ) : (
-
                     <div className={cx('message-bubble')}>
                         <p className={cx('message-text')}>{text}</p>
                         <p className={cx('message-time')}>{time}</p>

@@ -73,3 +73,50 @@
     }
   }
 }
+.avatar-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  // Đảm bảo container đủ chỗ cho stack
+  width: 4.5rem;
+  height: 4.5rem;
+  position: relative;
+}
+
+// Avatar đơn thông thường (1-1 hoặc Group có ảnh riêng)
+.profile-pic {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// --- STYLE CHO AVATAR CHỒNG LÊN NHAU (STACK) ---
+.group-avatar-stack {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+
+  .stack-avatar {
+    position: absolute;
+    width: 2.8rem;  // Nhỏ hơn avatar chính một chút
+    height: 2.8rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-backgroundColor); // Viền trùng màu nền để tạo khoảng cách cắt
+
+    &.first {
+      bottom: 0;
+      right: 0;
+      z-index: 2; // Nằm trên
+    }
+
+    &.second {
+      top: 0;
+      left: 0;
+      z-index: 1; // Nằm dưới
+      opacity: 0.9;
+    }
+  }
+}

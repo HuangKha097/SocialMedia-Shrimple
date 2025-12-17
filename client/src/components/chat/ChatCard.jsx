@@ -2,59 +2,74 @@ import React from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatCard.module.scss';
 import default_avt from "../../../public/favicon.png";
-import {useChatStore} from "../../stores/useChatStore.js";
+import { useChatStore } from "../../stores/useChatStore.js";
+import { useAuthStore } from "../../stores/useAuthStore.js"; // 1. Import AuthStore
 
 const cx = classNames.bind(styles);
 
-const ChatCard = ({props}) => {
-    const { setActiveConversationId, activeConversationId} = useChatStore();
-    console.log(activeConversationId)
+const ChatCard = ({ props }) => {
+    const { setActiveConversationId, activeConversationId, messages, fetchMessages } = useChatStore();
+    const { user: currentUser } = useAuthStore(); // 2. Lấy user hiện tại
 
-    // // Helper format giờ (Hiện giờ:phút)
-    // const formatTime = (date) => {
-    //     if (!date) return "";
-    //     if (date instanceof Date) {
-    //         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    //     }
-    //     return "";
-    // };
+    // 3. LOGIC TÌM NGƯỜI CHAT CÙNG (PARTNER)
+    // Lọc ra người có _id KHÁC với _id của mình.
+    // Nếu không tìm thấy (trường hợp chat với chính mình), lấy người đầu tiên.
+    const partner = props?.participants?.find(p => p._id !== currentUser?._id) || props?.participants?.[0];
 
     const formatTime = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
         const now = new Date();
 
-        // Nếu là ngày hôm nay thì hiện giờ
         if (date.toDateString() === now.toDateString()) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
-        // Khác ngày thì hiện ngày/tháng
         return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
     };
+
+    const handleSelectConversation = async (conversationId) => {
+        setActiveConversationId(conversationId);
+        const isTempId = conversationId && conversationId.toString().startsWith('temp_');
+
+        if (!isTempId) {
+            if (!messages[conversationId]) {
+                await fetchMessages(conversationId);
+            }
+        } else {
+            console.log("Cuộc trò chuyện mới.");
+        }
+    }
+
     return (
         <div
             className={cx('chat-card-wrapper', { active: (Boolean(activeConversationId) && props._id === activeConversationId) })}
-            onClick={() => setActiveConversationId(props._id)}
-            style={{ cursor: 'pointer', border: (Boolean(activeConversationId) && props._id === activeConversationId) ? "2px solid var(--primary-color)": "none" }}
+            onClick={() => handleSelectConversation(props._id)}
+            style={{ cursor: 'pointer', border: (Boolean(activeConversationId) && props._id === activeConversationId) ? "2px solid var(--primary-color)" : "none" }}
         >
-            <div
-                className={cx('avatar-wrapper')}
+            <div className={cx('avatar-wrapper')}>
+                {/* 4. Dùng avatar của partner đã tìm được */}
+                <img
+                    src={partner?.avatarUrl || default_avt}
+                    alt="avatar"
+                    className={cx('avatar')}
+                />
 
-            >
-                <img src={props?.participants?.[1]?.avatarUrl || default_avt} alt="avatar" className={cx('avatar')} />
-
-                {/* Tạm thời để cứng online, sau này check props isOnline */}
+                {/* TODO: Check props.isOnline nếu có */}
                 <div className={cx("status", "online")}></div>
             </div>
 
             <div className={cx('info-wrapper')}>
-                <p className={cx('full-name')}>{props?.participants?.[1]?.displayName || props?.participants?.[0]?.displayName}</p>
+                {/* 5. Dùng tên của partner đã tìm được */}
+                <p className={cx('full-name')}>
+                    {partner?.displayName || "Unknown User"}
+                </p>
 
-                {/* Logic style: Nếu chưa đọc thì in đậm */}
                 <p
                     className={cx('last-message')}
                     style={{ fontWeight: (props.unreadCounts > 0) ? 'bold' : 'normal', color: (props.unreadCounts > 0) ? '#000' : '#c8c8c8' }}
                 >
+                    {/* Kiểm tra nếu là tin nhắn của mình thì thêm chữ "You: " (Tuỳ chọn) */}
+                    {/* {props?.lastMessage?.senderId === currentUser?._id && "You: "} */}
                     {props?.lastMessage?.content || "No message yet!"}
                 </p>
             </div>
@@ -63,7 +78,7 @@ const ChatCard = ({props}) => {
                 <p className={cx('time')}>{formatTime(props?.lastMessage?.createdAt)}</p>
                 {props?.unreadCounts > 0 && (
                     <span className={cx('unread-count')}>
-                        {props?.[0]?.unreadCounts}
+                        {props?.unreadCounts > 9 ? '9+' : props?.unreadCounts}
                     </span>
                 )}
             </div>

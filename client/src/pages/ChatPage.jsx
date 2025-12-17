@@ -9,6 +9,7 @@ import {toast} from "sonner";
 import SettingContainer from "../components/setting/SettingContainer.jsx";
 import {ChevronRight} from 'lucide-react';
 import AddFriendPopUp from "../components/slidebar/AddFriendPopUp.jsx";
+import CreateGroupPopUp from "../components/slidebar/CreateGroupPopUp.jsx";
 
 
 const cx = classNames.bind(styles);
@@ -19,6 +20,7 @@ const ChatPage = () => {
     const [isShowSlideBar, setIsShowSlideBar] = useState(true);
     const [isShowChatInfo, setIisShowChatInfo] = useState(false);
     const [isShowAddFriendPopup, setIsShowAddFriendPopup] = useState(false);
+    const [isShowCreateGroupPopup, setIsShowCreateGroupPopup] = useState(false);
     const signOut = useAuthStore((state) => state.signOut);
     console.log(user);
 
@@ -43,11 +45,14 @@ const ChatPage = () => {
     const onCloseAddFriendPopup = () => {
         setIsShowAddFriendPopup((prev) => !prev);
     }
+    const onCloseCreateGroupPopup = () => {
+        setIsShowCreateGroupPopup((prev) => !prev);
+    }
 
     return (<div className={cx("container")}>
         <div className={cx("chat-wrapper")}>
             {isShowSlideBar ? <div className={cx("block-left")}>
-                <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar} onCloseAddFriendPopup={onCloseAddFriendPopup}/>
+                <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar} onCloseAddFriendPopup={onCloseAddFriendPopup} onCloseCreateGroupPopup={onCloseCreateGroupPopup}/>
             </div> : <div className={cx("block-left", "no-slide-bar")}>
                 <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
             </div>}
@@ -60,6 +65,9 @@ const ChatPage = () => {
             </div>}
             {isShowAddFriendPopup && <div className={cx("add-friend-wrapper")}>
                 <AddFriendPopUp onCloseAddFriendPopup={onCloseAddFriendPopup}/>
+            </div>}
+            {isShowCreateGroupPopup && <div className={cx("add-friend-wrapper")}>
+                <CreateGroupPopUp onCloseCreateGroupPopup={onCloseCreateGroupPopup}/>
             </div>}
         </div>
         <p className={cx("copyright")}>

@@ -6,28 +6,25 @@ import FriendRequestCard from "../../components/chat/FriendRequestCard.jsx";
 import { useChatStore } from "../../stores/useChatStore.js";
 import { toast } from "sonner";
 import { UserX } from 'lucide-react';
+import LoadingSpin from "../common/loading/LoadingSpin.jsx";
 
 const cx = classNames.bind(styles);
 
 const BodyRequests = () => {
-    // 1. Lấy state và action MỚI từ Store
     const {
         friendRequests,
         fetchFriendRequests,
-        isFriendRequestsLoading,
-        acceptRequestAction,   // Action tích hợp (API + Store update)
-        declineRequestAction   // Action tích hợp (API + Store update)
+        isFriendRequestsLoading, // Biến này quan trọng
+        acceptRequestAction,
+        declineRequestAction
     } = useChatStore();
 
-    // State lưu ID của request đang xử lý để hiện loading spinner
     const [processingId, setProcessingId] = useState(null);
 
-    // 2. Load dữ liệu khi vào trang
     useEffect(() => {
         fetchFriendRequests();
     }, [fetchFriendRequests]);
 
-    // 3. Xử lý Chấp nhận (Gọi Action của Store)
     const handleAccept = async (requestId) => {
         setProcessingId(requestId);
         try {
@@ -42,7 +39,6 @@ const BodyRequests = () => {
         }
     };
 
-    // 4. Xử lý Từ chối (Gọi Action của Store)
     const handleDecline = async (requestId) => {
         setProcessingId(requestId);
         try {
@@ -56,26 +52,23 @@ const BodyRequests = () => {
         }
     };
 
-    // 5. Biến an toàn: Đảm bảo luôn là mảng trước khi map
     const safeRequests = Array.isArray(friendRequests) ? friendRequests : [];
 
     return (
         <div className={cx('body-requests-container')}>
-
             <div className={cx('list-container')}>
-                {/* Case 1: Đang tải lần đầu */}
+
+                {/* 2. Sử dụng LoadingSpin khi đang tải */}
                 {isFriendRequestsLoading && (
-                    <p className={cx('loading-text')}>Đang tải danh sách...</p>
+                    <LoadingSpin fullHeight={true} />
                 )}
 
-                {/* Case 2: Danh sách trống */}
+                {/* Case: Danh sách trống */}
                 {!isFriendRequestsLoading && safeRequests.length === 0 && (
                     <div className={cx('empty-state')}>
-                        <p style={{color:"white"}}>No friend request yet!</p>
+                        <div style={{padding: 20, textAlign: 'center', color: '#888'}}>No friend request yet!</div>
                     </div>
                 )}
-
-                {/* Case 3: Có dữ liệu -> Render List */}
                 {!isFriendRequestsLoading && safeRequests.map((req) => (
                     <FriendRequestCard
                         key={req._id}
