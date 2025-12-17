@@ -1,8 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBarBody.module.scss';
-import { NavLink, Route, Routes } from 'react-router-dom';
-import { Navigate } from "react-router";
 import BodyFriendsChat from "./BodyFriendsChat.jsx";
 import BodyGroupsChat from "./BodyGroupsChat.jsx";
 import BodyRequests from "./BodyRequests.jsx";
@@ -14,6 +12,7 @@ const cx = classNames.bind(styles);
 const SlidebarBody = () => {
     const { conversations, friendRequests, friends, fetchFriends } = useChatStore();
     const { user } = useAuthStore();
+    const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'groups', 'requests'
 
     useEffect(() => {
         if (fetchFriends) fetchFriends();
@@ -75,6 +74,19 @@ const SlidebarBody = () => {
     const countGroups = groupConversations.length;
     const countFriendRequest = friendRequests.length;
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'friends':
+                return <BodyFriendsChat convo={combinedList} />;
+            case 'groups':
+                return <BodyGroupsChat convo={groupConversations} />;
+            case 'requests':
+                return <BodyRequests friendRequests={friendRequests} />;
+            default:
+                return <BodyFriendsChat convo={combinedList} />;
+        }
+    };
+
     return (
         <div className={cx("slidebar-body-wrapper")}>
             <div className={cx("search-box")}>
@@ -85,18 +97,28 @@ const SlidebarBody = () => {
                 />
             </div>
             <ul className={cx("slidebar-body-navigation")}>
-                <NavLink to="/friends-slide" className={(nav) => cx("nav-item", { active: nav.isActive })}>{`Friends (${countFriends})`}</NavLink>
-                <NavLink to="/groups-slide" className={(nav) => cx("nav-item", { active: nav.isActive })}>{`Groups (${countGroups})`}</NavLink>
-                <NavLink to="/requests-slide" className={(nav) => cx("nav-item", { active: nav.isActive })}>{`Requests (${countFriendRequest})`}</NavLink>
+                <button 
+                    className={cx("nav-item", { active: activeTab === 'friends' })} 
+                    onClick={() => setActiveTab('friends')}
+                >
+                    {`Friends (${countFriends})`}
+                </button>
+                <button 
+                    className={cx("nav-item", { active: activeTab === 'groups' })} 
+                    onClick={() => setActiveTab('groups')}
+                >
+                    {`Groups (${countGroups})`}
+                </button>
+                <button 
+                    className={cx("nav-item", { active: activeTab === 'requests' })} 
+                    onClick={() => setActiveTab('requests')}
+                >
+                    {`Requests (${countFriendRequest})`}
+                </button>
             </ul>
 
             <div className={cx("slidebar-body-list")}>
-                <Routes>
-                    <Route path="" element={<Navigate to="/friends-slide" replace />} />
-                    <Route path="friends-slide" element={<BodyFriendsChat convo={combinedList} />} />
-                    <Route path="groups-slide" element={<BodyGroupsChat convo={groupConversations} />} />
-                    <Route path="requests-slide" element={<BodyRequests friendRequests={friendRequests} />} />
-                </Routes>
+                {renderContent()}
             </div>
         </div>
     );

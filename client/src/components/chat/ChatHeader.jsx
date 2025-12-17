@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatHeader.module.scss';
 import defaultAvatar from "../../../public/favicon.png";
 import { Info, Phone, Video } from 'lucide-react';
 import { useAuthStore } from "../../stores/useAuthStore.js";
+import { useChatStore } from "../../stores/useChatStore.js";
+import { useCallStore } from '../../stores/useCallStore';
+import { useNavigate } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
 const ChatHeader = ({ onCloseChatInfo, chat }) => {
-    const { user: currentUser } = useAuthStore();
+    const { user: currentUser, onlineUsers } = useAuthStore();
+    const { friends } = useChatStore();
+    const { initiateCall } = useCallStore();
+    const navigate = useNavigate();
 
     if (!chat) return null;
 
     const isGroup = chat.isGroup;
     let displayName = "Unknown";
     let statusText = "Offline";
+    let isOnline = false;
+    let partnerId = null;
 
     // --- 1. XỬ LÝ DỮ LIỆU ---
     const participants = chat.participants || [];
@@ -29,11 +37,24 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
         const partner = participants.find(p => p._id !== currentUser?._id) || participants[0];
         if (partner) {
             displayName = partner.displayName || partner.username || "User";
-            statusText = "Online";
+            isOnline = onlineUsers.includes(partner._id);
+            statusText = isOnline ? "Active now" : "Offline";
+            partnerId = partner._id;
         }
     }
 
-    // --- 2. HÀM RENDER AVATAR (Giống GroupChatCard) ---
+    // --- CHECK FRIENDSHIP FOR CALLS ---
+    const isAllowedToCall = useMemo(() => {
+        if (isGroup) return true; 
+
+        const partner = participants.find(p => p._id !== currentUser?._id);
+        if (!partner) return false;
+
+        return friends.some(f => f._id.toString() === partner._id.toString());
+    }, [isGroup, participants, currentUser, friends]);
+
+
+    // --- 2. HÀM RENDER AVATAR ---
     const renderAvatar = () => {
         // A. Nếu là Group
         if (isGroup) {
@@ -69,7 +90,7 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
             }
         }
 
-        // B. Nếu là 1-1 (Hoặc Group không có thành viên/ảnh) -> Hiện logic cũ
+        // B. Nếu là 1-1
         let singleAvatarUrl = defaultAvatar;
         if (!isGroup) {
             const partner = participants.find(p => p._id !== currentUser?._id) || participants[0];
@@ -86,10 +107,21 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
         );
     };
 
+    const handleCall = (video) => {
+        if (!isGroup && partnerId) {
+            initiateCall(partnerId, video);
+        }
+    };
+
+    const handleProfileClick = () => {
+        if (!isGroup && partnerId) {
+            navigate(`/feed/profile/${partnerId}`);
+        }
+    };
+
     return (
         <div className={cx('header-wrapper')}>
-            <div className={cx('user-info')}>
-                {/* --- 3. GỌI HÀM RENDER --- */}
+            <div className={cx('user-info')} onClick={handleProfileClick} style={{cursor: !isGroup ? 'pointer' : 'default'}}>
                 <div className={cx('avatar-container')}>
                     {renderAvatar()}
                 </div>
@@ -97,15 +129,29 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
                 <div className={cx("info")}>
                     <p className={cx('user-name')}>{displayName}</p>
                     <span className={cx('user-status')}>
-                        {!isGroup && <span className={cx('online-dot')}></span>}
+                        {!isGroup && isOnline && <span className={cx('online-dot')}></span>}
                         {statusText}
                     </span>
                 </div>
             </div>
-
+            
             <div className={cx('action-buttons')}>
-                <button className={cx('btn')}><Phone size={16} /></button>
-                <button className={cx('btn')}><Video size={16} /></button>
+                <button 
+                    className={cx('btn')} 
+                    disabled={!isAllowedToCall}
+                    title={!isAllowedToCall ? "You are not friends" : "Voice Call"}
+                    onClick={() => handleCall(false)}
+                >
+                    <Phone size={16} />
+                </button>
+                <button 
+                    className={cx('btn')} 
+                    disabled={!isAllowedToCall}
+                    title={!isAllowedToCall ? "You are not friends" : "Video Call"}
+                    onClick={() => handleCall(true)}
+                >
+                    <Video size={16} />
+                </button>
                 <button className={cx('btn')} onClick={onCloseChatInfo}><Info size={16} /></button>
             </div>
         </div>

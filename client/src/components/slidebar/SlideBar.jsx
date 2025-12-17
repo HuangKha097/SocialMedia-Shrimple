@@ -3,19 +3,38 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBar.module.scss';
 import default_avt from "../../../public/favicon.png";
 import SlidebarBody from './SlidebarBody.jsx';
-import {ChevronLeft, UserPlus, Users} from 'lucide-react';
-import {useAuthStore} from "../../stores/useAuthStore.js";
+import { ChevronLeft, UserPlus, Users, Newspaper, MessageSquare } from 'lucide-react';
+import { useAuthStore } from "../../stores/useAuthStore.js";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
-const SlideBar = ({onCloseSetting, onCloseSlideBar,onCloseAddFriendPopup,onCloseCreateGroupPopup}) => {
-    const {user} = useAuthStore()
-    console.log(user)
+const SlideBar = ({ onCloseSetting, onCloseSlideBar, onCloseAddFriendPopup, onCloseCreateGroupPopup }) => {
+    const { user } = useAuthStore();
+    const navigate = useNavigate();
+    const location = useLocation();
+
     return (<div className={cx('slide-bar-wrapper')}>
         <div className={cx("header")}>
 
             <div className={cx('logo')}>
                 <h1 className={cx("logo-text")}>Shrimple</h1>
-                <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18}/></button>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                    <button 
+                        className={cx("more-btn", { active: location.pathname.startsWith('/chat') })} 
+                        onClick={() => navigate('/chat')} 
+                        title="Chats"
+                    >
+                        <MessageSquare size={18} />
+                    </button>
+                    <button 
+                        className={cx("more-btn", { active: location.pathname.startsWith('/feed') })} 
+                        onClick={() => navigate('/feed')} 
+                        title="News Feed"
+                    >
+                        <Newspaper size={18} />
+                    </button>
+                    <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18} /></button>
+                </div>
             </div>
             <div className={cx('profile')}>
                 <div className={cx('profile')}>

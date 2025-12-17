@@ -3,6 +3,9 @@ import {persist} from "zustand/middleware";
 import {toast} from "sonner";
 import {authService} from "../services/authService.js";
 import {useChatStore} from "./useChatStore.js";
+import { io } from "socket.io-client";
+
+const BASE_URL = "http://localhost:5001"; // Or from env
 
 export const useAuthStore = create(
     persist(
@@ -10,7 +13,8 @@ export const useAuthStore = create(
             accessToken: null,
             user: null,
             loading: false,
-
+            socket: null,
+            onlineUsers: [],
 
             signUp: async (username, password, email, firstName, lastName, gender, birthday) => {
                 try {
@@ -44,10 +48,13 @@ export const useAuthStore = create(
                     }
 
                     get().setAccessToken(accessToken);
-                    await get().fetchMe();
+                    await get().fetchMe(); // This will connect socket now inside fetchMe or explicitly here
+
                     await useChatStore.getState().fetchConversations()
                     await useChatStore.getState().fetchFriends()
                     await useChatStore.getState().fetchFriendRequests()
+
+                    get().connectSocket(); // Ensure connection
 
                     toast.success(message || "Sign In successfully!");
                     return {success: true};
@@ -63,6 +70,7 @@ export const useAuthStore = create(
             signOut: async () => {
                 try {
                     toast.success("Sign Out Successfully!");
+                    get().disconnectSocket(); // Disconnect
                     get().clearState();
                     await authService.signOut();
                 } catch (error) {
@@ -77,6 +85,7 @@ export const useAuthStore = create(
                     set({loading: true});
                     const user = await authService.fetchMe();
                     set({user});
+                    get().connectSocket(); // Connect on refresh/load
                 } catch (err) {
                     console.log(err);
                     set({user: null, accessToken: null});
@@ -109,11 +118,42 @@ export const useAuthStore = create(
 
 
             clearState: () => {
-                set({user: null,accessToken: null});
+                get().disconnectSocket();
+                set({user: null,accessToken: null, onlineUsers: [], socket: null});
                 localStorage.clear()
                 useChatStore.getState().reset()
             },
             setAccessToken: (accessToken) => set({accessToken}),
+            updateUser: (newData) => {
+                set((state) => ({ user: { ...state.user, ...newData } }));
+            },
+
+            connectSocket: () => {
+                const { user, socket } = get();
+                if (!user || socket?.connected) return;
+
+                const newSocket = io(BASE_URL, {
+                    query: {
+                        userId: user._id,
+                    },
+                });
+
+                newSocket.connect();
+                set({ socket: newSocket });
+
+                newSocket.on("getOnlineUsers", (userIds) => {
+                    set({ onlineUsers: userIds });
+                });
+                
+                // Subscribe to chat events
+                useChatStore.getState().subscribeToMessages();
+            },
+
+            disconnectSocket: () => {
+                useChatStore.getState().unsubscribeFromMessages();
+                if (get().socket?.connected) get().socket.disconnect();
+                set({ socket: null, onlineUsers: [] });
+            }
 
         }),
 

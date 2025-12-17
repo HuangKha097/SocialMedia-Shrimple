@@ -7,6 +7,24 @@
   background-color: var(--primary-blockBackgroundColor);
   border-top: 1px solid var(--primary-borderColor);
   flex-shrink: 0;
+
+  &.disabled-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-blockBackgroundColor); 
+    opacity: 1; 
+    pointer-events: auto;
+    cursor: default;
+  }
+}
+
+.disabled-text {
+  font-size: 1.6rem;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  user-select: none;
 }
 .btn-group{
   display: flex;
@@ -29,6 +47,15 @@
     background-color: var(--primary-hoverBackgroundColor);
     color: var(--primary-color);
   }
+
+  &:disabled {
+    color: #555;
+    cursor: not-allowed;
+    &:hover {
+        background-color: transparent;
+        color: #555;
+    }
+  }
 }
 
 .text-input {
@@ -43,12 +70,19 @@
   &:focus {
     outline: none;
     border-color: var(--primary-color);
-
   }
 
   &::placeholder {
     color: var(--primary-textColor);
     opacity: 0.6;
   }
+  
+  &:disabled {
+    background-color: rgba(200, 200, 200, 0.2);
+    cursor: not-allowed;
+    border-color: transparent;
+  }
 }
+
+
 

@@ -55,5 +55,11 @@ export const friendService = {
     blockUser: async (userId) => {
         const res = await api.post(`/api/friends/block/${userId}`);
         return res.data;
+    },
+
+    // 9. Lấy gợi ý kết bạn
+    getSuggestedFriends: async () => {
+        const res = await api.get("/api/friends/suggestions");
+        return res.data;
     }
 };

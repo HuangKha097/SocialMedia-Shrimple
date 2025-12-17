@@ -3,18 +3,22 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatCard.module.scss';
 import default_avt from "../../../public/favicon.png";
 import { useChatStore } from "../../stores/useChatStore.js";
-import { useAuthStore } from "../../stores/useAuthStore.js"; // 1. Import AuthStore
+import { useAuthStore } from "../../stores/useAuthStore.js";
+import { useNavigate } from "react-router-dom";
 
 const cx = classNames.bind(styles);
 
 const ChatCard = ({ props }) => {
     const { setActiveConversationId, activeConversationId, messages, fetchMessages } = useChatStore();
-    const { user: currentUser } = useAuthStore(); // 2. Lấy user hiện tại
+    const { user: currentUser, onlineUsers } = useAuthStore(); 
+    const navigate = useNavigate();
 
     // 3. LOGIC TÌM NGƯỜI CHAT CÙNG (PARTNER)
     // Lọc ra người có _id KHÁC với _id của mình.
     // Nếu không tìm thấy (trường hợp chat với chính mình), lấy người đầu tiên.
     const partner = props?.participants?.find(p => p._id !== currentUser?._id) || props?.participants?.[0];
+    
+    const isOnline = onlineUsers.includes(partner?._id);
 
     const formatTime = (dateString) => {
         if (!dateString) return '';
@@ -29,6 +33,9 @@ const ChatCard = ({ props }) => {
 
     const handleSelectConversation = async (conversationId) => {
         setActiveConversationId(conversationId);
+        // Only navigate if standard chat (or temp), but let's just sync URL always
+        navigate(`/chat?id=${conversationId}`);
+
         const isTempId = conversationId && conversationId.toString().startsWith('temp_');
 
         if (!isTempId) {
@@ -54,8 +61,7 @@ const ChatCard = ({ props }) => {
                     className={cx('avatar')}
                 />
 
-                {/* TODO: Check props.isOnline nếu có */}
-                <div className={cx("status", "online")}></div>
+                {isOnline && <div className={cx("status", "online")}></div>}
             </div>
 
             <div className={cx('info-wrapper')}>

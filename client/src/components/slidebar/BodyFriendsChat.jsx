@@ -7,7 +7,6 @@ const BodyFriendsChat = ({convo}) => {
 
     // if (!user) return null;
 
-    console.log("cxcx", convo)
     const friendConversations = convo.filter(c => !c.isGroup);
 
     if (friendConversations.length === 0) {

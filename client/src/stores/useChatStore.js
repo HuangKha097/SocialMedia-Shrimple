@@ -18,6 +18,7 @@ export const useChatStore = create(
 
             friends: [],
             friendRequests: [],
+            suggestedFriends: [],
             isFriendRequestsLoading: false,
 
             setActiveConversationId: (id) => set({activeConversationId: id}),
@@ -102,6 +103,39 @@ export const useChatStore = create(
                 } catch (error) {
                     console.error("Error fetching friends:", error);
                     set({friends: []});
+                }
+            },
+            fetchSuggestedFriends: async () => {
+                try {
+                    const data = await friendService.getSuggestedFriends();
+                    set({suggestedFriends: data || []});
+                } catch (error) {
+                    console.error("Error fetching suggested friends:", error);
+                    set({suggestedFriends: []});
+                }
+            },
+            unfriendAction: async (friendId) => {
+                try {
+                    await friendService.unfriend(friendId);
+                    set((state) => ({
+                         friends: state.friends.filter(f => f._id !== friendId)
+                    }));
+                } catch (error) {
+                    console.error("Error unfriending user:", error);
+                    throw error;
+                }
+            },
+
+            sendRequestAction: async (targetUserId) => {
+                try {
+                    await friendService.sendRequest(targetUserId);
+                    // Optionally update state if needed, e.g. add to sent requests list
+                     set((state) => ({
+                         // Maybe track sent requests ID to disable button
+                     }));
+                } catch (error) {
+                    console.error("Error sending friend request:", error);
+                    throw error;
                 }
             },
 
@@ -331,11 +365,76 @@ export const useChatStore = create(
                     throw error;
                 }
             },
+
+            subscribeToMessages: () => {
+                const { socket } = useAuthStore.getState();
+                if (!socket) return;
+
+                // Prevent duplicate listeners
+                socket.off("newMessage");
+
+                socket.on("newMessage", (newMessage) => {
+                    set((state) => {
+                        const convoId = newMessage.conversationId;
+                        const isActive = state.activeConversationId === convoId;
+
+                        // 1. Update Messages if loaded
+                        let updatedMessagesMap = { ...state.messages };
+                        // If we have messages for this convo loaded, append.
+                        // If not, we don't strictly *need* to append, but if we open it, we'll fetch.
+                        // BUT, if it's not loaded, the user won't see it until they click.
+                        if (updatedMessagesMap[convoId]) {
+                             updatedMessagesMap[convoId] = {
+                                ...updatedMessagesMap[convoId],
+                                items: [...updatedMessagesMap[convoId].items, { ...newMessage, isOwn: false }]
+                            };
+                        }
+
+                        // 2. Update Conversations List
+                        const conversationIndex = state.conversations.findIndex(c => c._id === convoId);
+                        let updatedConversations = [...state.conversations];
+
+                        if (conversationIndex !== -1) {
+                            const updatedConvo = {
+                                ...updatedConversations[conversationIndex],
+                                lastMessage: {
+                                    content: newMessage.content,
+                                    createdAt: newMessage.createdAt,
+                                    senderId: newMessage.senderId
+                                },
+                                updatedAt: new Date().toISOString(),
+                                lastMessageAt: new Date().toISOString(),
+                                // Assuming unreadCounts logic needs work on backend too, but for local state:
+                                unreadCounts: isActive 
+                                    ? updatedConversations[conversationIndex].unreadCounts // Keep as is if active (or reset elsewhere)
+                                    : (updatedConversations[conversationIndex].unreadCounts instanceof Map 
+                                        ? updatedConversations[conversationIndex].unreadCounts 
+                                        : 0) + 1 // Simple increment for now, actually needs structured Map handling
+                            };
+                            updatedConversations.splice(conversationIndex, 1);
+                            updatedConversations.unshift(updatedConvo);
+                        } else {
+                            // New conversation logic
+                             setTimeout(() => get().fetchConversations(), 0);
+                        }
+
+                        return {
+                            messages: updatedMessagesMap,
+                            conversations: updatedConversations
+                        };
+                    });
+                });
+            },
+
+            unsubscribeFromMessages: () => {
+                const { socket } = useAuthStore.getState();
+                if (socket) socket.off("newMessage");
+            },
+
         }),
 
         {
             name: "chat-storage",
-
             partialize: (state) => ({
                 conversations: state.conversations,
                 friends: state.friends,

@@ -1,0 +1,250 @@
+import Post from "../models/Post.js";
+import Friend from "../models/Friend.js";
+import { spawn } from "child_process";
+import path from "path";
+
+const checkFakeNews = (text) => {
+    return new Promise((resolve, reject) => {
+        // Path to python script relative to server root
+        const scriptPath = path.join(process.cwd(), 'src', 'algorithms', 'TF-IDF_RandomForest', 'predict_news.py');
+        
+        const pythonProcess = spawn('python', [scriptPath], {
+             stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let dataString = '';
+        let errorString = '';
+
+        // Write text to stdin
+        pythonProcess.stdin.write(text);
+        pythonProcess.stdin.end();
+
+        pythonProcess.stdout.on('data', (data) => {
+            dataString += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            errorString += data.toString();
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                console.error("Python script error:", errorString);
+                // Fallback: If python fails (e.g. missing libs), we might allow the post or block. 
+                // Let's log and allow for now to avoid blocking service, OR reject specific error.
+                // But user requested feature, so let's try to parse error or default to false (Real) 
+                // ONLY IF it's a system error. If it's a model error, we might want to know.
+                // For now, resolve as Real to prevent blocking valid posts if system is buggy.
+                // BUT better to log.
+                console.log("Fake news check failed, assuming real (default fallback).");
+                resolve({ isFake: false }); 
+                return;
+            }
+
+            try {
+                // Find JSON in output (in case of other prints)
+                // We expect just JSON
+                const result = JSON.parse(dataString);
+                resolve(result);
+            } catch (err) {
+                console.error("Failed to parse Python output:", dataString);
+                resolve({ isFake: false });
+            }
+        });
+    });
+};
+
+export const createPost = async (req, res) => {
+    try {
+        const { content } = req.body;
+        let imageUrl = "";
+
+        if (req.file) {
+            imageUrl = `/public/uploads/posts/${req.file.filename}`;
+        } else if (req.body.image) {
+             imageUrl = req.body.image;
+        }
+        
+        if (!content && !imageUrl) {
+            return res.status(400).json({ message: "Post content or image is required" });
+        }
+
+        // --- Fake News Detection ---
+        if (content && content.length > 50) { // Only check if text is substantial (> 50 chars)
+            try {
+                const detectionResult = await checkFakeNews(content);
+                if (detectionResult.error) {
+                     console.error("Model error:", detectionResult.error);
+                } else if (detectionResult.isFake) {
+                    return res.status(400).json({ 
+                        message: "Your post appears to contain fake news or misleading information and cannot be posted.",
+                        isFake: true,
+                        confidence: detectionResult.confidence
+                    });
+                }
+            } catch (err) {
+                console.error("Fake news detection exception:", err);
+            }
+        }
+        // ---------------------------
+
+        const newPost = new Post({
+            author: req.user._id,
+            content,
+            image: imageUrl,
+        });
+
+        await newPost.save();
+        
+        // Populate author details to return immediately
+        await newPost.populate("author", "username displayName avatarURL");
+
+        res.status(201).json(newPost);
+    } catch (error) {
+        console.error("Error in createPost controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getAllPosts = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // 1. Get all friends
+        const friendships = await Friend.find({
+            $or: [{ userA: userId }, { userB: userId }]
+        });
+
+        const friendIds = friendships.map(f => 
+            f.userA.toString() === userId.toString() ? f.userB : f.userA
+        );
+
+        // 2. Add current user to list (to see own posts)
+        const allowedAuthors = [...friendIds, userId];
+
+        // 3. Find posts only from friends and self
+        const posts = await Post.find({ author: { $in: allowedAuthors } })
+            .sort({ createdAt: -1 })
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error("Error in getAllPosts controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getUserPosts = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const posts = await Post.find({ author: userId })
+            .sort({ createdAt: -1 })
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error("Error in getUserPosts controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const likePost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const userId = req.user._id;
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        const isLiked = post.likes.includes(userId);
+
+        if (isLiked) {
+            // Unlike
+            post.likes = post.likes.filter((id) => id.toString() !== userId.toString());
+        } else {
+            // Like
+            post.likes.push(userId);
+        }
+
+        await post.save();
+        res.status(200).json(post);
+    } catch (error) {
+        console.error("Error in likePost controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const addComment = async (req, res) => {
+    try {
+        const { text } = req.body;
+        const postId = req.params.id;
+
+        if (!text) {
+            return res.status(400).json({ message: "Comment text is required" });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        const comment = {
+            text,
+            postedBy: req.user._id,
+        };
+
+        post.comments.push(comment);
+        await post.save();
+        
+        // Re-fetch to populate comment user details
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error("Error in addComment controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const deletePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        // Check if user is author
+        if (post.author.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: "You are not authorized to delete this post" });
+        }
+
+        await Post.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Post deleted successfully" });
+    } catch (error) {
+        console.error("Error in deletePost controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getPostById = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        res.status(200).json(post);
+    } catch (error) {
+        console.error("Error in getPostById controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};

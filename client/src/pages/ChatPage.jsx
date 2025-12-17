@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 import classNames from 'classnames/bind';
 import styles from '../assets/css/ChatPage.module.scss';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import SlideBar from "../components/slidebar/SlideBar.jsx";
-import ChatContainer from "../components/chat/ChatContainer.jsx";
 import {useAuthStore} from "../stores/useAuthStore.js";
 import {toast} from "sonner";
 import SettingContainer from "../components/setting/SettingContainer.jsx";
@@ -12,17 +12,22 @@ import AddFriendPopUp from "../components/slidebar/AddFriendPopUp.jsx";
 import CreateGroupPopUp from "../components/slidebar/CreateGroupPopUp.jsx";
 
 
+import PostsSidebar from "../components/posts/PostsSidebar.jsx";
+
 const cx = classNames.bind(styles);
 const ChatPage = () => {
     const user = useAuthStore((s) => s.user);
-
     const [isShowSetting, setIsShowSetting] = useState(false);
     const [isShowSlideBar, setIsShowSlideBar] = useState(true);
     const [isShowChatInfo, setIisShowChatInfo] = useState(false);
     const [isShowAddFriendPopup, setIsShowAddFriendPopup] = useState(false);
     const [isShowCreateGroupPopup, setIsShowCreateGroupPopup] = useState(false);
     const signOut = useAuthStore((state) => state.signOut);
-    console.log(user);
+    const location = useLocation();
+    
+    // Determine view mode from URL
+    const isFeedView = location.pathname.startsWith('/feed');
+    const isChatView = location.pathname.startsWith('/chat');
 
     const handleLogout = async () => {
         try {
@@ -49,15 +54,32 @@ const ChatPage = () => {
         setIsShowCreateGroupPopup((prev) => !prev);
     }
 
+    // Context to pass to Outlet (ChatContainer specifically needs this)
+    const outletContext = {
+        isShowChatInfo,
+        onCloseChatInfo
+    };
+
     return (<div className={cx("container")}>
         <div className={cx("chat-wrapper")}>
             {isShowSlideBar ? <div className={cx("block-left")}>
-                <SlideBar onCloseSetting={onCloseSetting} onCloseSlideBar={onCloseSlideBar} onCloseAddFriendPopup={onCloseAddFriendPopup} onCloseCreateGroupPopup={onCloseCreateGroupPopup}/>
+                {isFeedView ? (
+                    <PostsSidebar 
+                        onCloseSetting={onCloseSetting}
+                    />
+                ) : (
+                    <SlideBar 
+                        onCloseSetting={onCloseSetting} 
+                        onCloseSlideBar={onCloseSlideBar} 
+                        onCloseAddFriendPopup={onCloseAddFriendPopup} 
+                        onCloseCreateGroupPopup={onCloseCreateGroupPopup}
+                    />
+                )}
             </div> : <div className={cx("block-left", "no-slide-bar")}>
                 <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
             </div>}
             <div className={cx("block-right")}>
-                <ChatContainer isShowChatInfo={isShowChatInfo} onCloseChatInfo={onCloseChatInfo}/>
+               <Outlet context={outletContext} />
             </div>
 
             {isShowSetting && <div className={cx("setting-wrapper")}>

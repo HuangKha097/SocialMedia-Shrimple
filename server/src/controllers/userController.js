@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Post from "../models/Post.js";
 
 export const authMe = async (req, res) => {
     try {
@@ -43,5 +44,70 @@ export const getUserByUsername = async (req, res) => {
     } catch (error) {
         console.log("Error search user:", error);
         return res.status(500).json({message: "Lỗi hệ thống"});
+    }
+}
+
+export const toggleSavePost = async (req, res) => {
+    try {
+        const { postId } = req.body;
+        const userId = req.user._id;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const isSaved = user.savedPosts.includes(postId);
+
+        if (isSaved) {
+            user.savedPosts = user.savedPosts.filter(id => id.toString() !== postId);
+            await user.save();
+            return res.status(200).json({ message: "Post unsaved", savedPosts: user.savedPosts });
+        } else {
+            user.savedPosts.push(postId);
+            await user.save();
+            return res.status(200).json({ message: "Post saved", savedPosts: user.savedPosts });
+        }
+
+    } catch (error) {
+        console.error("Error in toggleSavePost:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export const getSavedPosts = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId).populate({
+            path: 'savedPosts',
+            populate: [
+                { path: 'author', select: 'username displayName avatarURL' },
+                { path: 'comments.postedBy', select: 'username displayName avatarURL' }
+            ]
+        });
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // We return the reversed array to show newest saved first (optional, but good UX)
+        // Or just return as is.
+        const reversedSavedPosts = [...user.savedPosts].reverse();
+
+        return res.status(200).json(reversedSavedPosts);
+
+    } catch (error) {
+        console.error("Error in getSavedPosts:", error);
+    }
+}
+
+export const getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).select("-password");
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }

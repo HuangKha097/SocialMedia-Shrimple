@@ -53,6 +53,9 @@
   gap: 0.8rem;
 
   .nav-item{
+    background: transparent;
+    border: none;
+    font-family: inherit;
     padding: 0.6rem 1rem;
     color: var(--primary-textColor);
     opacity: 0.6;
@@ -67,7 +70,7 @@
     &.active {
       color: var(--primary-color);
       opacity: 1;
-
+      background-color: rgba(var(--primary-rgb), 0.1);
     }
 
     &:hover:not(.active) {

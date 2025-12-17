@@ -1,0 +1,344 @@
+
+.posts-container-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--primary-blockBackgroundColor); 
+  color: var(--primary-textColor);
+  overflow: hidden;
+
+  /* Match border radius and borders from ChatContainer */
+  border-top-right-radius: 0.8rem;
+  border-bottom-right-radius: 0.8rem;
+  border-left: 1px solid var(--primary-borderColor);
+}
+
+.header {
+    flex-shrink: 0;
+    padding: 2rem 2.5rem; /* Match typical header padding */
+    border-bottom: 1px solid var(--primary-borderColor);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 8rem; /* approximate match to typical header height */
+    
+    h2 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--primary-textColor);
+    }
+}
+
+.content-area {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 2rem 2.5rem;
+    gap: 2rem;
+    
+    /* Scrollbar styling */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #555;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #777;
+    }
+}
+
+.create-post-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--primary-borderColor);
+    
+    textarea {
+        width: 100%;
+        background-color: transparent;
+        border: none;
+        color: inherit;
+        font-size: 1.6rem;
+        font-family: inherit;
+        resize: none;
+        outline: none;
+        min-height: 80px;
+        margin-bottom: 1rem;
+        
+        &::placeholder {
+            color: #888;
+        }
+    }
+    
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1rem;
+        
+        .upload-btn {
+            color: var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+            
+            &:hover {
+                 background-color: rgba(var(--primary-rgb), 0.1);
+            }
+        }
+        
+        .post-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 2.5rem;
+            border-radius: 2rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.4rem;
+            transition: opacity 0.2s;
+            
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            &:hover:not(:disabled) {
+                opacity: 0.9;
+            }
+        }
+    }
+    
+    // Input styling for image url
+    input[type="text"] {
+        width: 100%;
+        background-color: rgba(0,0,0,0.2);
+        border: 1px solid var(--primary-borderColor);
+        padding: 1rem;
+        border-radius: 0.8rem;
+        color: white;
+        margin-bottom: 1rem;
+        outline: none;
+        font-size: 1.4rem;
+        
+        &:focus {
+            border-color: var(--primary-color);
+        }
+    }
+}
+
+.post-item {
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--primary-borderColor);
+    
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+        position: relative; /* For proper positioning if needed */
+        
+        img {
+            width: 4.5rem;
+            height: 4.5rem;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .user-info {
+           flex: 1; /* Take up available space */
+            h4 {
+                font-weight: 600;
+                font-size: 1.6rem;
+                margin: 0;
+            }
+            span {
+                font-size: 1.2rem;
+                color: #888;
+                margin-top: 0.2rem;
+                display: block;
+            }
+        }
+
+        /* Options Menu Styles */
+        .more-options-wrapper {
+             position: relative;
+             
+             .more-btn {
+                 background: transparent;
+                 border: none;
+                 color: var(--primary-textColor);
+                 cursor: pointer;
+                 padding: 0.5rem;
+                 border-radius: 50%;
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 transition: background-color 0.2s;
+                 
+                 &:hover {
+                     background-color: rgba(255, 255, 255, 0.1);
+                 }
+             }
+
+             .options-menu {
+                 position: absolute;
+                 top: 100%;
+                 right: 0;
+                 background-color: #2a2a2a;
+                 border: 1px solid var(--primary-borderColor);
+                 border-radius: 0.8rem;
+                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                 padding: 0.5rem;
+                 z-index: 10;
+                 min-width: 200px;
+                 display: flex;
+                 flex-direction: column;
+                 
+                 .menu-option {
+                     background: transparent;
+                     border: none;
+                     color: var(--primary-textColor);
+                     padding: 0.8rem 1rem;
+                     text-align: left;
+                     cursor: pointer;
+                     font-size: 1.4rem;
+                     border-radius: 0.4rem;
+                     display: flex;
+                     align-items: center;
+                     gap: 1rem;
+                     
+                     &:hover {
+                         background-color: rgba(255, 255, 255, 0.05);
+                     }
+                     
+                     &.delete-option {
+                         color: #ef4444;
+                         &:hover {
+                             background-color: rgba(239, 68, 68, 0.1);
+                         }
+                     }
+                 }
+                 
+                 .menu-separator {
+                     height: 1px;
+                     background-color: var(--primary-borderColor);
+                     margin: 0.5rem 0;
+                 }
+             }
+        }
+    }
+    
+    .post-content {
+        margin-bottom: 1.5rem;
+        white-space: pre-wrap;
+        font-size: 1.5rem;
+        line-height: 1.5;
+    }
+    
+    .post-image {
+        width: 100%;
+        border-radius: 0.8rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--primary-borderColor);
+    }
+    
+    .post-actions {
+        display: flex;
+        gap: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1.2rem;
+        
+        button {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 1.4rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            
+            &:hover {
+                color: var(--primary-color);
+                background-color: rgba(255,255,255,0.02);
+            }
+            
+            &.liked {
+                color: #ef4444; // Red for liked
+            }
+        }
+    }
+    
+    .comments-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px dashed var(--primary-borderColor);
+        
+        .comment-input {
+             display: flex;
+             gap: 1rem;
+             margin-bottom: 1.5rem;
+             
+             input {
+                 flex: 1;
+                 background-color: rgba(255,255,255,0.05);
+                 border: none;
+                 border-radius: 2rem;
+                 padding: 1rem 1.5rem;
+                 color: inherit;
+                 font-size: 1.4rem;
+                 outline: none;
+                 
+                 &:focus {
+                     background-color: rgba(255,255,255,0.08);
+                 }
+             }
+        }
+        
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            
+            .comment {
+                font-size: 1.4rem;
+                background-color: rgba(255,255,255,0.02);
+                padding: 1rem;
+                border-radius: 0.8rem;
+                
+                strong {
+                    margin-right: 0.5rem;
+                    color: var(--primary-color);
+                    font-weight: 500;
+                }
+                span {
+                    color: #ddd;
+                }
+            }
+        }
+    }
+}

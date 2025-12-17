@@ -12,7 +12,7 @@ export const protectedRoute = async (req, res, next) => {
 
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decodedUser) => {
             if (err) {
-                console.error(err);
+                console.error("JWT Verification Error:", err.message); // Log exact error
                 return res.status(403).json({message: "Access token is expired or not correct"});
             }
             const user = await User.findById(decodedUser.userId).select("-password");

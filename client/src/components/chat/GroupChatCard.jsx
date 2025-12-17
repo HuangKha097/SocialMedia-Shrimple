@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from "react-router-dom";
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatCard.module.scss';
 import default_avt from "../../../public/favicon.png";
@@ -61,8 +62,10 @@ const GroupChatCard = ({ props }) => {
     };
 
     // 4. Xử lý khi click vào Card: Set Active ID + Tải tin nhắn
+    const navigate = useNavigate();
     const handleSelectConversation = async (conversationId) => {
         setActiveConversationId(conversationId);
+        navigate(`/chat?id=${conversationId}`);
 
         // Luôn gọi fetchMessages để đảm bảo tải dữ liệu mới nhất
         // Store sẽ tự xử lý nếu cần thiết (dựa vào cursor) nhưng gọi ở đây là an toàn nhất

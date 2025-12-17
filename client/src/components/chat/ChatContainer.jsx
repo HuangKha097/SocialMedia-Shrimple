@@ -7,12 +7,22 @@ import ChatInput from "./ChatInput.jsx";
 import ChatInfo from "./ChatInfo.jsx";
 import {useChatStore} from "../../stores/useChatStore.js";
 import {MessageSquare} from "lucide-react";
+import { useSearchParams } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
 const ChatContainer = ({onCloseChatInfo, isShowChatInfo}) => {
+    const {activeConversationId, setActiveConversationId, conversations, friends} = useChatStore();
+    const [searchParams] = useSearchParams();
+
+    React.useEffect(() => {
+        const idFromUrl = searchParams.get('id');
+        if (idFromUrl && idFromUrl !== activeConversationId) {
+             setActiveConversationId(idFromUrl);
+        }
+    }, [searchParams, setActiveConversationId, activeConversationId]);
+
     // 1. Lấy thêm `friends` từ store để tìm thông tin người bạn nếu là chat mới
-    const {activeConversationId, conversations, friends} = useChatStore();
 
     // 2. Logic tìm conversation:
     // Ưu tiên 1: Tìm trong danh sách chat đã có (conversations)

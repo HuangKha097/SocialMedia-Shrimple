@@ -1,6 +1,7 @@
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import {upDateConversationAfterCreateMessage} from "../utils/messageHelper.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 
 export const sendDirectMessage = async (req, res) => {
@@ -50,6 +51,12 @@ export const sendDirectMessage = async (req, res) => {
         upDateConversationAfterCreateMessage(conversation, message, senderId);
         await conversation.save();
 
+        // REALTIME SOCKET
+        const receiverSocketId = getReceiverSocketId(recipientId);
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("newMessage", message);
+        }
+
         return res.status(201).json({message});
     } catch (error) {
         console.error("Error in sendDirectMessage", error);
@@ -65,7 +72,7 @@ export const sendGroupMessage = async (req, res) => {
 
         let conversation = req.conversation;
         if(!conversation && conversationId) {
-            conversation = await Conversation.findById(conversationId);
+            conversation = await Conversation.findById(conversationId).populate('participants.userId');
         }
 
         if (!content) {
@@ -79,6 +86,25 @@ export const sendGroupMessage = async (req, res) => {
 
         upDateConversationAfterCreateMessage(conversation, message, senderId);
         await conversation.save();
+
+        // REALTIME GROUP SOCKET
+        // Emit to all participants except sender
+        if (conversation && conversation.participants) {
+            conversation.participants.forEach(p => {
+                 // Handling populated vs non-populated participants structure just in case, 
+                 // though usually it is { userId: ... } or just ID if not populated.
+                 // The schema says participants: [{ userId: ObjectId, ... }]
+                const participantId = p.userId?._id?.toString() || p.userId?.toString();
+                
+                if (participantId && participantId !== senderId.toString()) {
+                    const socketId = getReceiverSocketId(participantId);
+                    if (socketId) {
+                        io.to(socketId).emit("newMessage", message);
+                    }
+                }
+            });
+        }
+
         return res.status(201).json({message});
     }catch (error) {
         console.error("Error in sendGroupMessage", error);

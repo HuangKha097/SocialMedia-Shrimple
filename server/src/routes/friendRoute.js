@@ -7,7 +7,8 @@ import {
     getAllFriends,
     getFriendRequests,
     sendFriendRequest,
-    unFriend
+    unFriend,
+    getSuggestedFriends
 } from "../controllers/friendController.js";
 import {protectedRoute} from "../middlewares/authMiddleware.js";
 
@@ -21,5 +22,6 @@ router.post("/unFriend/:friendId", protectedRoute, unFriend)
 
 router.get("/", protectedRoute, getAllFriends)
 router.get("/requests", protectedRoute, getFriendRequests)
+router.get("/suggestions", protectedRoute, getSuggestedFriends)
 
 export default router;
