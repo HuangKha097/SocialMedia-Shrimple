@@ -29,7 +29,7 @@ const checkFakeNews = (text) => {
 
         pythonProcess.on('close', (code) => {
             if (code !== 0) {
-                console.error("Python script error:", errorString);
+                console.error("Python script error:", errorString)
                 // Fallback: If python fails (e.g. missing libs), we might allow the post or block. 
                 // Let's log and allow for now to avoid blocking service, OR reject specific error.
                 // But user requested feature, so let's try to parse error or default to false (Real) 
