@@ -12,19 +12,22 @@ export const chatService = {
         const res = await api.get(`/api/conversations/${id}/messages?limit=50${cursorParam}`);
         return {messages: res.data.messages, cursor: res.data.nextCursor};
     },
-    async sendDirectMessage(recipientId, content, conversationId) {
+    async sendDirectMessage(recipientId, content, conversationId, image, file, type) {
 
         const res = await api.post(`/api/messages/direct`, {
             recipientId,
             content,
-            conversationId
+            conversationId,
+            image,
+            file,
+            type
         });
         return res.data;
     } ,
-    async sendGroupMessage(conversationId, content) {
+    async sendGroupMessage(conversationId, content, image, file, type) {
 
         const res = await api.post(`/api/messages/group`, {
-            conversationId, content
+            conversationId, content, image, file, type
         });
         return res.data;
     } ,
@@ -32,6 +35,16 @@ export const chatService = {
         const res = await api.post(`/api/conversations/`, {
             isGroup, name, memberIds
         })
+        return res.data;
+    },
+    async reactToMessage(messageId, reaction) {
+        const res = await api.post(`/api/messages/reaction`, {
+            messageId, reaction
+        })
+        return res.data;
+    },
+    async getSharedMedia(conversationId) {
+        const res = await api.get(`/api/conversations/${conversationId}/media`);
         return res.data;
     }
 }

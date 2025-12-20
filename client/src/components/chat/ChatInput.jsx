@@ -1,33 +1,34 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatInput.module.scss';
-import { Paperclip, Send, Smile, Mic, MapPin } from 'lucide-react';
+import { Paperclip, Send, Smile, Mic, MapPin, X, Image as ImageIcon } from 'lucide-react';
 import { useChatStore } from "../../stores/useChatStore.js";
 import { useAuthStore } from "../../stores/useAuthStore.js";
+import EmojiPicker from 'emoji-picker-react';
 
 const cx = classNames.bind(styles);
 
 const ChatInput = () => {
     const [text, setText] = useState("");
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [image, setImage] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    
+    const fileInputRef = useRef(null);
+
     const { sendDirectMessage, sendGroupMessage, activeConversationId, conversations, friends } = useChatStore();
     const { user: currentUser } = useAuthStore();
 
-    // Check friendship logic
-    const isAllowedToChat = useMemo(() => {
-        // 1. Get current conversation
+    // Check chat permission logic
+    const chatStatus = useMemo(() => {
         const currentConvo = conversations.find(c => c._id === activeConversationId);
+        if (!activeConversationId) return { allowed: false, reason: "No selection" };
         
-        // 2. If no conversation selected (e.g. init state), maybe disable or allow default
-        if (!activeConversationId) return false;
-
-        // 3. Check if temp or existing private
         const isTemp = activeConversationId.toString().startsWith('temp_');
         const isGroup = currentConvo?.isGroup && !isTemp;
+        
+        if (isGroup) return { allowed: true, reason: "" };
 
-        // 4. Always allow group chat
-        if (isGroup) return true;
-
-        // 5. Find partner ID for private chat
         let partnerId = null;
         if (isTemp) {
             partnerId = activeConversationId.split('temp_')[1];
@@ -36,26 +37,66 @@ const ChatInput = () => {
             partnerId = partner ? partner._id : null;
         }
 
-        // 6. Check if partnerId is in friends list
-        if (!partnerId) return false;
+        if (!partnerId) return { allowed: false, reason: "User not found" };
         
-        // friend._id check. usually IDs are strings, but ensure type safety
+        // Check if I blocked them
+        if (currentUser.blockedUsers && currentUser.blockedUsers.includes(partnerId)) {
+             return { allowed: false, reason: "You have blocked this user" };
+        }
+
+        // Check friendship
         const isFriend = friends.some(f => f._id.toString() === partnerId.toString());
-        return isFriend;
+        if (!isFriend) {
+            return { allowed: false, reason: "You are not friends with this user" };
+        }
+        
+        return { allowed: true, reason: "" };
 
     }, [activeConversationId, conversations, friends, currentUser]);
 
 
-    const handleSendMessage = async () => {
-        if (!text.trim() || !isAllowedToChat) return;
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        // 1. Tìm thông tin cuộc trò chuyện hiện tại
+        if (!file.type.startsWith('image/')) {
+            // Toast error here ideally
+            console.error("Please select an image file");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+             setPreviewUrl(reader.result);
+             setImage(file);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeImage = () => {
+        setImage(null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    const onEmojiClick = (emojiObject) => {
+        setText((prev) => prev + emojiObject.emoji);
+    };
+
+    const handleSendMessage = async () => {
+        if ((!text.trim() && !image) || !chatStatus.allowed) return;
+
         const currentConvo = conversations.find(c => c._id === activeConversationId);
         const isGroup = currentConvo?.isGroup && !activeConversationId.toString().startsWith('temp_');
+        
+        // Use previewUrl as base64 image data for simple handling
+        const imageToSend = previewUrl; 
 
         try {
             if (isGroup) {
-                await sendGroupMessage(activeConversationId, text);
+                await sendGroupMessage(activeConversationId, text, imageToSend, null, 'text'); // Type infer inside store if needed? Or pass 'image' if only image?
             } else {
                 let recipientId = null;
                 if (activeConversationId.toString().startsWith('temp_')) {
@@ -67,10 +108,13 @@ const ChatInput = () => {
 
                 if (recipientId) {
                    const convoIdToSend = activeConversationId.toString().startsWith('temp_') ? null : activeConversationId;
-                   await sendDirectMessage(recipientId, text, convoIdToSend);
+                   await sendDirectMessage(recipientId, text, convoIdToSend, imageToSend, null, 'text'); 
                 }
             }
+            // Reset state
             setText(""); 
+            removeImage();
+            setShowEmojiPicker(false);
         } catch (error) {
             console.error("Failed to send message:", error);
         }
@@ -83,44 +127,88 @@ const ChatInput = () => {
         }
     };
 
-    const placeholderText = isAllowedToChat ? "Type a message..." : "You are not friends with this user.";
-
-    if (!isAllowedToChat) {
+    if (!chatStatus.allowed) {
         return (
-            <div className={cx('input-wrapper', 'disabled-banner')}>
-                <span className={cx('disabled-text')}>
-                    You are not friends with this user
-                </span>
+            <div className={cx('container')}>
+                <div className={cx('input-wrapper', 'disabled-banner')}>
+                    <span className={cx('disabled-text')}>
+                        {chatStatus.reason}
+                    </span>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className={cx('input-wrapper')}>
-            <div className={cx('btn-group')}>
-                <button className={cx('btn', 'attach-btn')}><Paperclip size={16}/></button>
-                <button className={cx('btn', 'emoji-btn')}><Smile size={16}/></button>
-                <button className={cx('btn', 'emoji-btn')}><MapPin size={16}/></button>
-            </div>
+        <div className={cx('container')}>
+            {showEmojiPicker && (
+                <div className={cx('emoji-picker-container')}>
+                    <EmojiPicker onEmojiClick={onEmojiClick} theme="dark" width={300} height={400} />
+                </div>
+            )}
 
-            <input
-                type="text"
-                placeholder="Type a message..."
-                className={cx('text-input')}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-            />
+            {previewUrl && (
+                <div className={cx('preview-area')}>
+                    <div className={cx('preview-img-wrapper')}>
+                        <img src={previewUrl} alt="Preview" />
+                        <button className={cx('close-btn')} onClick={removeImage}>
+                            <X size={12} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
-            <div className={cx("btn-group")}>
-                <button className={cx('btn', 'send-btn')}><Mic size={16}/></button>
-                <button
-                    className={cx('btn', 'send-btn')}
-                    onClick={handleSendMessage}
-                    disabled={!text.trim()}
+            <div className={cx('input-wrapper')}>
+                <div className={cx('btn-group')}>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        style={{ display: 'none' }} 
+                        accept="image/*"
+                        onChange={handleFileChange} 
+                    />
+                    <button 
+                        className={cx('btn', 'attach-btn')}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <ImageIcon size={20}/>
+                    </button>
+                    <button 
+                        className={cx('btn', 'emoji-btn')}
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                        <Smile size={20}/>
+                    </button>
+                    {/* Placeholder for Map/Location */}
+                    <button className={cx('btn', 'map-btn')}><MapPin size={20}/></button>
+                </div>
+
+                <input
+                    type="text"
+                    placeholder="Type a message..."
+                    className={cx('text-input')}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setShowEmojiPicker(false)} 
+                />
+
+                <div className={cx("btn-group")}>
+                    {/* Placeholder for Mic */}
+                    <button 
+                    className={cx('btn', 'mic-btn')}
+                    onClick={() => alert("Voice messaging coming soon!")}
                 >
-                    <Send size={16}/>
+                    <Mic size={20}/>
                 </button>
+                    <button
+                        className={cx('btn', 'send-btn')}
+                        onClick={handleSendMessage}
+                        disabled={!text.trim() && !image}
+                    >
+                        <Send size={20}/>
+                    </button>
+                </div>
             </div>
         </div>
     );

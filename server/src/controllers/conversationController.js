@@ -135,3 +135,50 @@ export const getMessage = async (req, res) => {
         return res.status(500).json({message: "System error"});
     }
 }
+
+export const getSharedMedia = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        
+        // Find messages with images or files
+        const messages = await Message.find({
+            conversationId,
+            $or: [
+                { imgUrl: { $exists: true, $ne: null } },
+                { fileUrl: { $exists: true, $ne: null } }
+            ]
+        })
+        .sort({ createdAt: -1 })
+        .limit(100); // Limit to last 100 media items for now
+
+        const media = {
+            images: [],
+            files: []
+        };
+
+        messages.forEach(msg => {
+            if (msg.imgUrl) {
+                media.images.push({
+                    _id: msg._id,
+                    url: msg.imgUrl,
+                    createdAt: msg.createdAt,
+                    senderId: msg.senderId
+                });
+            }
+            if (msg.fileUrl) {
+                media.files.push({
+                    _id: msg._id,
+                    url: msg.fileUrl,
+                    fileName: msg.content || "Unknown file", // Usually content stores filename or we might need separate field
+                    createdAt: msg.createdAt,
+                    senderId: msg.senderId
+                });
+            }
+        });
+
+        return res.status(200).json(media);
+    } catch (error) {
+        console.error("Error getting shared media", error);
+        return res.status(500).json({ message: "System error" });
+    }
+}

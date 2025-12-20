@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 export const usePostStore = create((set, get) => ({
     posts: [],
+    videoPosts: [],
     isLoading: false,
 
     fetchPosts: async () => {
@@ -29,7 +30,7 @@ export const usePostStore = create((set, get) => ({
             if (postData.image instanceof File) {
                 const formData = new FormData();
                 formData.append("content", postData.content);
-                formData.append("image", postData.image);
+                formData.append("media", postData.image);
                 dataToSend = formData;
                 // headers = { "Content-Type": "multipart/form-data" }; // Let browser/axios set this
             }
@@ -98,6 +99,22 @@ export const usePostStore = create((set, get) => ({
             toast.error(error.response?.data?.message || "Failed to fetch user posts");
         } finally {
             set({ isLoading: false });
+        }
+    },
+
+    fetchVideoFeed: async (page = 1) => {
+        try {
+            const res = await api.get(`/api/posts/videos?page=${page}&limit=5`);
+            if (page === 1) {
+                set({ videoPosts: res.data });
+            } else {
+                set(state => ({ videoPosts: [...state.videoPosts, ...res.data] }));
+            }
+            return res.data;
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load videos");
+            return [];
         }
     },
 

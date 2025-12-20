@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import classNames from 'classnames/bind';
 import styles from '../assets/css/ChatPage.module.scss';
 import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import SlideBar from "../components/slidebar/SlideBar.jsx";
 import {useAuthStore} from "../stores/useAuthStore.js";
@@ -10,11 +11,24 @@ import SettingContainer from "../components/setting/SettingContainer.jsx";
 import {ChevronRight} from 'lucide-react';
 import AddFriendPopUp from "../components/slidebar/AddFriendPopUp.jsx";
 import CreateGroupPopUp from "../components/slidebar/CreateGroupPopUp.jsx";
-
-
 import PostsSidebar from "../components/posts/PostsSidebar.jsx";
 
 const cx = classNames.bind(styles);
+
+const pageVariants = {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
+    transition: { duration: 0.2 }
+};
+
+const sidebarVariants = {
+    initial: { opacity: 0, x: -20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
+    transition: { duration: 0.2 }
+};
+
 const ChatPage = () => {
     const user = useAuthStore((s) => s.user);
     const [isShowSetting, setIsShowSetting] = useState(false);
@@ -26,13 +40,12 @@ const ChatPage = () => {
     const location = useLocation();
     
     // Determine view mode from URL
-    const isFeedView = location.pathname.startsWith('/feed');
-    const isChatView = location.pathname.startsWith('/chat');
+    const isFeedView = location.pathname.startsWith('/feed') || location.pathname.startsWith('/video');
+    // const isChatView = location.pathname.startsWith('/chat');
 
     const handleLogout = async () => {
         try {
             await signOut()
-
         } catch (err) {
             toast.error(err.message);
             console.log(err)
@@ -63,34 +76,97 @@ const ChatPage = () => {
     return (<div className={cx("container")}>
         <div className={cx("chat-wrapper")}>
             {isShowSlideBar ? <div className={cx("block-left")}>
-                {isFeedView ? (
-                    <PostsSidebar 
-                        onCloseSetting={onCloseSetting}
-                    />
-                ) : (
-                    <SlideBar 
-                        onCloseSetting={onCloseSetting} 
-                        onCloseSlideBar={onCloseSlideBar} 
-                        onCloseAddFriendPopup={onCloseAddFriendPopup} 
-                        onCloseCreateGroupPopup={onCloseCreateGroupPopup}
-                    />
-                )}
+                <AnimatePresence mode="wait">
+                    {isFeedView ? (
+                        <motion.div 
+                            key="posts-sidebar"
+                            variants={sidebarVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', width: '100%' }}
+                        >
+                            <PostsSidebar 
+                                onCloseSetting={onCloseSetting}
+                            />
+                        </motion.div>
+                    ) : (
+                        <motion.div 
+                            key="chat-sidebar"
+                            variants={sidebarVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', width: '100%' }}
+                        >
+                            <SlideBar 
+                                onCloseSetting={onCloseSetting} 
+                                onCloseSlideBar={onCloseSlideBar} 
+                                onCloseAddFriendPopup={onCloseAddFriendPopup} 
+                                onCloseCreateGroupPopup={onCloseCreateGroupPopup}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div> : <div className={cx("block-left", "no-slide-bar")}>
                 <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronRight size={18}/></button>
             </div>}
             <div className={cx("block-right")}>
-               <Outlet context={outletContext} />
+               <AnimatePresence mode="wait">
+                   <motion.div
+                        key={location.pathname.split('/')[1]} // 'chat' or 'feed'
+                        variants={pageVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit" 
+                        style={{ height: '100%', width: '100%' }}
+                   >
+                       <Outlet context={outletContext} />
+                   </motion.div>
+                </AnimatePresence>
             </div>
 
-            {isShowSetting && <div className={cx("setting-wrapper")}>
-                <SettingContainer onCloseSetting={onCloseSetting} handleLogout={handleLogout}/>
-            </div>}
-            {isShowAddFriendPopup && <div className={cx("add-friend-wrapper")}>
-                <AddFriendPopUp onCloseAddFriendPopup={onCloseAddFriendPopup}/>
-            </div>}
-            {isShowCreateGroupPopup && <div className={cx("add-friend-wrapper")}>
-                <CreateGroupPopUp onCloseCreateGroupPopup={onCloseCreateGroupPopup}/>
-            </div>}
+            <AnimatePresence>
+                {isShowSetting && (
+                    <motion.div 
+                        className={cx("setting-wrapper")}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <SettingContainer onCloseSetting={onCloseSetting} handleLogout={handleLogout}/>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+                {isShowAddFriendPopup && (
+                    <motion.div 
+                        className={cx("add-friend-wrapper")}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                         <AddFriendPopUp onCloseAddFriendPopup={onCloseAddFriendPopup}/>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+                {isShowCreateGroupPopup && (
+                    <motion.div 
+                        className={cx("add-friend-wrapper")}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                         transition={{ duration: 0.2 }}
+                    >
+                        <CreateGroupPopUp onCloseCreateGroupPopup={onCloseCreateGroupPopup}/>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
         <p className={cx("copyright")}>
             © 2025 Shrimple. All rights reserved.

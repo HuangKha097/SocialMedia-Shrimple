@@ -16,6 +16,10 @@ const postSchema = new mongoose.Schema(
             type: String, // Single image for now or use array if needed. User pattern implies simple strings often.
             default: "",
         },
+        video: {
+            type: String,
+            default: "",
+        },
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,

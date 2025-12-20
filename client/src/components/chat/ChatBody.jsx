@@ -10,7 +10,7 @@ const cx = classNames.bind(styles);
 
 const ChatBody = () => {
     // Lấy thêm fetchMessages từ store
-    const { messages, activeConversationId, conversations, fetchMessages } = useChatStore();
+    const { messages, activeConversationId, conversations, fetchMessages, reactToMessageAction } = useChatStore();
     const { user: currentUser } = useAuthStore();
 
     const endOfMessagesRef = useRef(null);
@@ -81,13 +81,16 @@ const ChatBody = () => {
                         senderName={isMe ? "Me" : senderInfo.name}
                         avatar={isMe ? (currentUser?.avatarUrl || defaultAvatar) : senderInfo.avatar}
                         text={message.content}
+                        image={message.imgUrl}
                         isGroup={currentConvo?.isGroup}
                         time={formatTime(message.createdAt)}
                         isMe={isMe}
+                        reactions={message.reactions || []}
+                        onReact={(emoji) => reactToMessageAction(message._id, emoji, activeConversationId)}
                     />
                 );
             })}
-
+             {/* <div ref={endOfMessagesRef} /> */}
         </div>
     );
 };

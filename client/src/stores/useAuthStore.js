@@ -16,6 +16,8 @@ export const useAuthStore = create(
             socket: null,
             onlineUsers: [],
 
+            checkAuth: async () => { await get().fetchMe(); },
+
             signUp: async (username, password, email, firstName, lastName, gender, birthday) => {
                 try {
                     set({loading: true});

@@ -53,6 +53,111 @@
     }
   }
 
+  // --- Reaction Styles ---
+  .message-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: fit-content; // Just in case, to hug content
+  }
+
+  .reaction-picker {
+      position: absolute;
+      // Position above the message
+      top: -4.5rem; 
+      left: 0;
+      background-color: var(--primary-blockBackgroundColor); 
+      border: 1px solid var(--primary-borderColor);
+      padding: 0.6rem 1rem;
+      border-radius: 3rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      display: flex;
+      gap: 0.8rem;
+      z-index: 100;
+      animation: fadeIn 0.2s ease-out;
+
+      &.picker-me {
+          left: auto;
+          right: 0;
+      }
+  }
+
+  .emoji-btn {
+      font-size: 2rem;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      
+      &:hover {
+          transform: scale(1.3);
+      }
+      &:active {
+          transform: scale(0.95);
+      }
+  }
+
+  .reactions-display {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: -0.8rem; // Overlap slightly or just close
+      margin-bottom: 0.4rem;
+      z-index: 5;
+      position: relative;
+      padding-left: 1rem;
+
+      &.reactions-me {
+          justify-content: flex-end;
+           padding-right: 1rem;
+           padding-left: 0;
+      }
+  }
+
+    .reaction-item {
+      background-color: var(--primary-blockBackgroundColor);
+      border: 1px solid var(--primary-borderColor, #eee);
+      border-radius: 1.2rem;
+      padding: 0.2rem 0.6rem;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      cursor: pointer;
+      position: relative; // For tooltip positioning
+
+      .reaction-tooltip {
+          position: absolute;
+          bottom: 120%; // Place above
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: rgba(0,0,0,0.8);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          font-size: 1.1rem;
+          white-space: nowrap;
+          z-index: 101;
+          pointer-events: none;
+          
+          // Little triangle
+          &::after {
+              content: "";
+              position: absolute;
+              top: 100%;
+              left: 50%;
+              margin-left: -5px;
+              border-width: 5px;
+              border-style: solid;
+              border-color: rgba(0,0,0,0.8) transparent transparent transparent;
+          }
+      }
+  }
+
+  @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
+
+
   .message-image {
     width: 24rem;
     border-radius: 1.2rem;
@@ -68,6 +173,20 @@
 
     .message-bubble {
       background-color: var(--primary-color);
+      
+      // Override text color for "me" bubbles if needed, usually white
+      .message-text {
+         color: #fff; 
+      }
+      .message-time {
+          color: rgba(255,255,255, 0.7);
+      }
+    }
+
+    .reaction-item {
+         // Keep reactions looking neutral or match theme?
+         // Usually reactions are small pills that stand out against the background
+         border-color: transparent;
     }
 
     .message-time {

@@ -30,6 +30,22 @@ const messageSchema = mongoose.Schema({
     imgUrl: {
         type: String,
     },
+    fileUrl: {
+        type: String,
+    },
+    reactions: [
+        {
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+                required: true
+            },
+            reaction: {
+                type: String, // e.g., 'like', 'love', 'haha', etc. or emoji
+                required: true
+            }
+        }
+    ],
 }, {
     timestamps: true
 })

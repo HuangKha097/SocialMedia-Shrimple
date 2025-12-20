@@ -188,7 +188,7 @@ export const useChatStore = create(
                     set({messageLoading: false});
                 }
             },
-            sendDirectMessage: async (recipientId, content, conversationId) => {
+            sendDirectMessage: async (recipientId, content, conversationId, image, file, type) => {
                 const { user } = useAuthStore.getState();
                 const { activeConversationId } = get();
 
@@ -201,7 +201,7 @@ export const useChatStore = create(
 
                 try {
                     // 1. Gọi API
-                    const response = await chatService.sendDirectMessage(recipientId, content, targetConvoId);
+                    const response = await chatService.sendDirectMessage(recipientId, content, targetConvoId, image, file, type);
                     const newMessage = response.message;
 
                     // 2. Xác định ID cuộc trò chuyện thực sự sau khi server trả về
@@ -307,12 +307,12 @@ export const useChatStore = create(
                     throw error; // Ném lỗi để UI (CreateGroupPopup) bắt và hiện Toast
                 }
             },
-            sendGroupMessage: async (conversationId, content) => {
+            sendGroupMessage: async (conversationId, content, image, file, type) => {
                 const { user } = useAuthStore.getState();
 
                 try {
                     // 1. Gọi API gửi tin nhắn nhóm
-                    const response = await chatService.sendGroupMessage(conversationId, content);
+                    const response = await chatService.sendGroupMessage(conversationId, content, image, file, type);
                     const newMessage = response.message;
 
                     // 2. Tạo object tin nhắn để update UI ngay lập tức
@@ -366,12 +366,104 @@ export const useChatStore = create(
                 }
             },
 
+            reactToMessageAction: async (messageId, reaction, conversationId) => {
+                const { user } = useAuthStore.getState();
+                const userId = user._id;
+
+                // Optimistic Update
+                set((state) => {
+                    const existingMessages = state.messages[conversationId]?.items || [];
+                    const msgIndex = existingMessages.findIndex(m => m._id === messageId);
+
+                    if (msgIndex !== -1) {
+                        const updatedMessages = [...existingMessages];
+                        const currentMessage = updatedMessages[msgIndex];
+                        const currentReactions = currentMessage.reactions ? [...currentMessage.reactions] : [];
+                        
+                        const existingReactionIndex = currentReactions.findIndex(r => {
+                             const rUserId = typeof r.userId === 'object' ? r.userId._id : r.userId;
+                             return rUserId.toString() === userId.toString();
+                        });
+
+                        if (existingReactionIndex !== -1) {
+                            if (currentReactions[existingReactionIndex].reaction === reaction) {
+                                // Remove
+                                currentReactions.splice(existingReactionIndex, 1);
+                            } else {
+                                // Update
+                                currentReactions[existingReactionIndex] = {
+                                    ...currentReactions[existingReactionIndex],
+                                    reaction
+                                };
+                            }
+                        } else {
+                            // Add
+                            currentReactions.push({
+                                userId: user, // Optimistically use full user object
+                                reaction
+                            });
+                        }
+
+                        updatedMessages[msgIndex] = {
+                            ...currentMessage,
+                            reactions: currentReactions
+                        };
+
+                        return {
+                            messages: {
+                                ...state.messages,
+                                [conversationId]: {
+                                    ...state.messages[conversationId],
+                                    items: updatedMessages
+                                }
+                            }
+                        };
+                    }
+                    return state;
+                });
+
+                try {
+                    // API Call
+                    const { reactions } = await chatService.reactToMessage(messageId, reaction);
+                    
+                    // Server returns standard data, update again to ensure consistency (e.g. timestamps, etc)
+                     set((state) => {
+                         const existingMessages = state.messages[conversationId]?.items || [];
+                         const msgIndex = existingMessages.findIndex(m => m._id === messageId);
+                         
+                         if (msgIndex !== -1) {
+                             const updatedMessages = [...existingMessages];
+                             updatedMessages[msgIndex] = {
+                                 ...updatedMessages[msgIndex],
+                                 reactions
+                             };
+
+                             return {
+                                 messages: {
+                                     ...state.messages,
+                                     [conversationId]: {
+                                         ...state.messages[conversationId],
+                                         items: updatedMessages
+                                     }
+                                 }
+                             };
+                         }
+                         return state;
+                     });
+
+                } catch (error) {
+                    console.error("Failed to react to message:", error);
+                    // Revert or fetch messages again could be done here
+                }
+            },
+
             subscribeToMessages: () => {
                 const { socket } = useAuthStore.getState();
                 if (!socket) return;
 
                 // Prevent duplicate listeners
                 socket.off("newMessage");
+                socket.off("messageReaction");
 
                 socket.on("newMessage", (newMessage) => {
                     set((state) => {
@@ -380,9 +472,6 @@ export const useChatStore = create(
 
                         // 1. Update Messages if loaded
                         let updatedMessagesMap = { ...state.messages };
-                        // If we have messages for this convo loaded, append.
-                        // If not, we don't strictly *need* to append, but if we open it, we'll fetch.
-                        // BUT, if it's not loaded, the user won't see it until they click.
                         if (updatedMessagesMap[convoId]) {
                              updatedMessagesMap[convoId] = {
                                 ...updatedMessagesMap[convoId],
@@ -404,17 +493,15 @@ export const useChatStore = create(
                                 },
                                 updatedAt: new Date().toISOString(),
                                 lastMessageAt: new Date().toISOString(),
-                                // Assuming unreadCounts logic needs work on backend too, but for local state:
                                 unreadCounts: isActive 
-                                    ? updatedConversations[conversationIndex].unreadCounts // Keep as is if active (or reset elsewhere)
+                                    ? updatedConversations[conversationIndex].unreadCounts 
                                     : (updatedConversations[conversationIndex].unreadCounts instanceof Map 
                                         ? updatedConversations[conversationIndex].unreadCounts 
-                                        : 0) + 1 // Simple increment for now, actually needs structured Map handling
+                                        : 0) + 1 
                             };
                             updatedConversations.splice(conversationIndex, 1);
                             updatedConversations.unshift(updatedConvo);
                         } else {
-                            // New conversation logic
                              setTimeout(() => get().fetchConversations(), 0);
                         }
 
@@ -424,11 +511,40 @@ export const useChatStore = create(
                         };
                     });
                 });
+
+                socket.on("messageReaction", ({ messageId, reactions, conversationId }) => {
+                    set((state) => {
+                        const existingMessages = state.messages[conversationId]?.items || [];
+                        const msgIndex = existingMessages.findIndex(m => m._id === messageId);
+
+                        if (msgIndex !== -1) {
+                            const updatedMessages = [...existingMessages];
+                            updatedMessages[msgIndex] = {
+                                ...updatedMessages[msgIndex],
+                                reactions
+                            };
+
+                            return {
+                                messages: {
+                                    ...state.messages,
+                                    [conversationId]: {
+                                        ...state.messages[conversationId],
+                                        items: updatedMessages
+                                    }
+                                }
+                            };
+                        }
+                        return state;
+                    });
+                });
             },
 
             unsubscribeFromMessages: () => {
                 const { socket } = useAuthStore.getState();
-                if (socket) socket.off("newMessage");
+                if (socket) {
+                    socket.off("newMessage");
+                    socket.off("messageReaction");
+                }
             },
 
         }),

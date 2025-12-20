@@ -1,13 +1,14 @@
-import React, {useState} from 'react'; // <--- Thêm useState
+import React, {useState} from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/SettingContainer.module.scss';
+import { motion } from 'framer-motion';
 
 // --- Import các component "trang" mới của bạn ---
 import AccountSettings from './AccountSettings';
 import ChatSettings from './ChatSettings';
-// import Notifications from './Notifications';
-// import BlockedUsers from './BlockedUsers';
-// import Application from './Application';
+import Notifications from './Notifications';
+import BlockedUsers from './BlockedUsers';
+import Application from './Application';
 
 const cx = classNames.bind(styles);
 
@@ -15,26 +16,45 @@ const SettingContainer = ({onCloseSetting, handleLogout}) => {
 
     const [activeTab, setActiveTab] = useState('account');
 
-
     const renderActiveTab = () => {
         switch (activeTab) {
             case 'account':
                 return <AccountSettings handleLogout={handleLogout}/>;
             case 'chat':
                 return <ChatSettings/>;
-            // case 'notifications':
-            //     return <Notifications />;
-            // case 'blocked':
-            //     return <BlockedUsers />;
-            // case 'application':
-            //     return <Application />;
+            case 'notifications':
+                return <Notifications />;
+            case 'blocked':
+                return <BlockedUsers />;
+            case 'application':
+                return <Application />;
             default:
                 return <AccountSettings/>;
         }
     };
 
+    const panelVariants = {
+        hidden: { x: "100%", opacity: 0 },
+        visible: { 
+            x: 0, 
+            opacity: 1,
+            transition: { type: "spring", stiffness: 300, damping: 30 }
+        },
+        exit: { 
+            x: "100%", 
+            opacity: 0,
+            transition: { duration: 0.2 }
+        }
+    };
+
     return (
-        <div className={cx('setting-wrapper')}>
+        <motion.div 
+            className={cx('setting-wrapper')}
+            variants={panelVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+        >
             <div className={cx("header")}>
                 <span>Settings</span>
                 <button onClick={onCloseSetting}>&times;</button>
@@ -80,7 +100,7 @@ const SettingContainer = ({onCloseSetting, handleLogout}) => {
                     {renderActiveTab()}
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

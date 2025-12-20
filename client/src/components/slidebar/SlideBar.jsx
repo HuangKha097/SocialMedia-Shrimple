@@ -3,7 +3,7 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/SlideBar.module.scss';
 import default_avt from "../../../public/favicon.png";
 import SlidebarBody from './SlidebarBody.jsx';
-import { ChevronLeft, UserPlus, Users, Newspaper, MessageSquare } from 'lucide-react';
+import { ChevronLeft, UserPlus, Users, Newspaper, MessageSquare, Video } from 'lucide-react';
 import { useAuthStore } from "../../stores/useAuthStore.js";
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -32,6 +32,13 @@ const SlideBar = ({ onCloseSetting, onCloseSlideBar, onCloseAddFriendPopup, onCl
                         title="News Feed"
                     >
                         <Newspaper size={18} />
+                    </button>
+                    <button 
+                        className={cx("more-btn", { active: location.pathname.startsWith('/video') })} 
+                        onClick={() => navigate('/video')} 
+                        title="Video Feed"
+                    >
+                        <Video size={18} />
                     </button>
                     <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18} /></button>
                 </div>

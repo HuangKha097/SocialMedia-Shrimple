@@ -1,6 +1,7 @@
 import express from "express";
-import {authMe, getUserByUsername, test, toggleSavePost, getSavedPosts, getUserById} from "../controllers/userController.js";
+import {authMe, getUserByUsername, test, toggleSavePost, getSavedPosts, getUserById, updateProfile, updateSettings, blockUser, unblockUser, getBlockedUsers} from "../controllers/userController.js";
 import {protectedRoute} from "../middlewares/authMiddleware.js";
+import {upload} from "../middlewares/uploadMiddleware.js";
 
 
 const router = express.Router();
@@ -13,6 +14,16 @@ router.get("/get-user-by-username", protectedRoute, getUserByUsername);
 
 router.post("/toggle-save", protectedRoute, toggleSavePost);
 router.get("/saved-posts", protectedRoute, getSavedPosts);
+router.put("/update-profile", protectedRoute, upload.single("avatar"), updateProfile);
+
+// Settings
+router.put("/settings", protectedRoute, updateSettings);
+
+// Blocking
+router.post("/block", protectedRoute, blockUser);
+router.post("/unblock", protectedRoute, unblockUser);
+router.get("/blocked", protectedRoute, getBlockedUsers);
+
 router.get("/:id", protectedRoute, getUserById);
 
 

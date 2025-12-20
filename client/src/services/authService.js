@@ -39,5 +39,9 @@ export const authService = {
     getUserById: async (userId) => {
         const res = await api.get(`/api/users/${userId}`);
         return res.data;
+    },
+    updateProfile: async (formData) => {
+        const res = await api.put("/api/users/update-profile", formData);
+        return res.data;
     }
 }

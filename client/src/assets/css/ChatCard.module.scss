@@ -1,5 +1,4 @@
 .chat-card-wrapper {
-
   display: flex;
   align-items: center;
   gap: 1.2rem;
@@ -93,6 +92,7 @@
   }
 
   .last-message {
+ 
     font-size: 1.3rem;
     color: var(--primary-textColor);
     opacity: 0.6;

@@ -58,15 +58,23 @@ export const createPost = async (req, res) => {
     try {
         const { content } = req.body;
         let imageUrl = "";
+        let videoUrl = "";
 
         if (req.file) {
-            imageUrl = `/public/uploads/posts/${req.file.filename}`;
+            const filePath = `/public/uploads/posts/${req.file.filename}`;
+            if (req.file.mimetype.startsWith('video/')) {
+                videoUrl = filePath;
+            } else {
+                imageUrl = filePath;
+            }
         } else if (req.body.image) {
              imageUrl = req.body.image;
+        } else if (req.body.video) {
+             videoUrl = req.body.video;
         }
         
-        if (!content && !imageUrl) {
-            return res.status(400).json({ message: "Post content or image is required" });
+        if (!content && !imageUrl && !videoUrl) {
+            return res.status(400).json({ message: "Post content or media is required" });
         }
 
         // --- Fake News Detection ---
@@ -92,6 +100,7 @@ export const createPost = async (req, res) => {
             author: req.user._id,
             content,
             image: imageUrl,
+            video: videoUrl,
         });
 
         await newPost.save();
@@ -131,6 +140,114 @@ export const getAllPosts = async (req, res) => {
         res.status(200).json(posts);
     } catch (error) {
         console.error("Error in getAllPosts controller: ", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getVideoFeed = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5; // Smaller chunks for videos
+        const skip = (page - 1) * limit;
+
+        // Global Video Feed: Find any posts with videos
+        const posts = await Post.find({ 
+            video: { $exists: true, $ne: "" } 
+        })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        if (posts.length === 0) {
+            // "TikTok API" fallback with many videos
+            const allDemos = [
+                {
+                    _id: "d1",
+                    content: "Elephant walk 🐘 #nature",
+                    video: "https://res.cloudinary.com/demo/video/upload/c_fill,h_1280,w_720/v1/samples/elephants.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a1", username: "nature", displayName: "Nature", avatarURL: "" }
+                },
+                {
+                    _id: "d2",
+                    content: "Sea turtle 🐢 #ocean",
+                    video: "https://res.cloudinary.com/demo/video/upload/c_fill,h_1280,w_720/v1/samples/sea-turtle.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a2", username: "ocean", displayName: "Ocean", avatarURL: "" }
+                },
+                {
+                    _id: "d3",
+                    content: "Mountain view 🏔️ #climb",
+                    video: "https://res.cloudinary.com/demo/video/upload/c_fill,h_1280,w_720/v1/samples/mountain-climb.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a3", username: "climb", displayName: "Climber", avatarURL: "" }
+                },
+                {
+                    _id: "d4",
+                    content: "Waves 🌊 #summer",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a4", username: "beach", displayName: "Beach", avatarURL: "" }
+                },
+                {
+                    _id: "d5",
+                    content: "Night Sky ✨ #stars",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-1610-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a5", username: "space", displayName: "Space", avatarURL: "" }
+                },
+                {
+                    _id: "d6",
+                    content: "Neon vibes 🟣 #neon",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a6", username: "neon", displayName: "Neon", avatarURL: "" }
+                },
+                {
+                    _id: "d7",
+                    content: "City Lights 🌃 #city",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-red-and-blue-lights-in-darkness-1191-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a7", username: "urban", displayName: "Urban", avatarURL: "" }
+                },
+                {
+                    _id: "d8",
+                    content: "Forest Flow 🌿 #green",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a8", username: "forest", displayName: "Forest", avatarURL: "" }
+                },
+                {
+                    _id: "d9",
+                    content: "Cute Cat 😺 #pets",
+                    video: "https://res.cloudinary.com/demo/video/upload/c_fill,h_1280,w_720/v1/dog.mp4", // Cloudinary demo dog is cute too
+                    likes: [], comments: [],
+                    author: { _id: "a9", username: "pets", displayName: "Pets", avatarURL: "" }
+                },
+                {
+                    _id: "d10",
+                    content: "Surfing 🏄 #surf",
+                    video: "https://assets.mixkit.co/videos/preview/mixkit-surfing-in-the-ocean-at-sunset-1174-large.mp4",
+                    likes: [], comments: [],
+                    author: { _id: "a10", username: "surf", displayName: "Surfer", avatarURL: "" }
+                }
+            ];
+
+            // Shuffling and generating unique IDs for infinite scroll
+            const shuffled = [...allDemos].sort(() => Math.random() - 0.5);
+            const paginatedDemos = shuffled.slice(0, limit).map((d, i) => ({
+                ...d,
+                _id: `${d._id}_p${page}_${i}`
+            }));
+
+            return res.status(200).json(paginatedDemos);
+        }
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error("Error in getVideoFeed controller: ", error.message);
         res.status(500).json({ message: "Internal Server Error" });
     }
 };

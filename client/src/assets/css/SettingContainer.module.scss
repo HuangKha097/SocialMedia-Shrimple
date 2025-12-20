@@ -13,7 +13,6 @@
 
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 
-  animation: slideInFromRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   overflow: hidden;
 }
 
@@ -110,6 +109,24 @@
   .section {
     margin-bottom: 2.5rem;
 
+    &.profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid var(--primary-borderColor);
+      padding-bottom: 2rem;
+      
+      h4 {
+         border: none;
+         margin: 0;
+         padding: 0;
+         color: var(--primary-textColor);
+         font-size: 2rem;
+         text-transform: none;
+      }
+    }
+
     h4 {
       font-size: 1.8rem;
       font-weight: 600;
@@ -120,6 +137,63 @@
       border-bottom: 1px solid var(--primary-borderColor);
       padding-bottom: 1rem;
     }
+  }
+
+  .avatar-wrapper {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      cursor: pointer;
+      overflow: hidden;
+      border: 3px solid var(--primary-color);
+      
+      &:hover .overlay {
+          opacity: 1;
+      }
+  }
+
+  .avatar-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+  }
+
+  .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      color: white;
+  }
+
+  .save-btn {
+      background-color: var(--primary-color);
+      color: #333;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 0.8rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: opacity 0.2s;
+      
+      &:hover {
+          opacity: 0.9;
+      }
+      
+      &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+      }
   }
 
   .form-group {
@@ -257,6 +331,85 @@
 
   &::-webkit-scrollbar-thumb:hover {
     background: #777;
+  }
+
+  .blocked-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+  }
+
+  .blocked-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--primary-borderColor);
+
+      .info {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+
+          img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              object-fit: cover;
+          }
+
+          span {
+              font-size: 1.4rem;
+              color: var(--primary-textColor);
+          }
+      }
+  }
+
+  .unblock-btn {
+      background: transparent;
+      border: 1px solid #ff4444;
+      color: #ff4444;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+
+      &:hover {
+          background: #ff4444;
+          color: white;
+      }
+  }
+
+  .preset-colors {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+  }
+
+  .color-swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+      border: 2px solid transparent;
+
+      &:hover {
+          transform: scale(1.1);
+      }
+
+      &.active {
+          border-color: white;
+          transform: scale(1.1);
+          box-shadow: 0 0 10px var(--primary-color);
+      }
+
+      &.custom-color {
+          overflow: hidden;
+          border: 1px solid var(--primary-borderColor);
+      }
   }
 
   @keyframes slideInFromRight {

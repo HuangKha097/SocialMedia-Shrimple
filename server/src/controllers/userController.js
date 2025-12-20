@@ -111,3 +111,103 @@ export const getUserById = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+export const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { displayName, bio, username, email } = req.body;
+        
+        const updateData = {};
+        if (displayName) updateData.displayName = displayName;
+        if (bio) updateData.bio = bio;
+        if (username) updateData.username = username;
+        // if (email) updateData.email = email; // Changing email usually requires verification
+
+        if (req.file) {
+            updateData.avatarUrl = `/public/uploads/posts/${req.file.filename}`; // reusing post uploads folder for now or create generic
+            // Better to use specific folder but for now stick to existing middleware config or uploadMiddleware needs update? 
+            // uploadMiddleware uploads to 'public/uploads/posts'. Let's reuse or fix middleware usage.
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true }).select("-password");
+
+        return res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export const updateSettings = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { soundEnabled, desktopNotifications } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (soundEnabled !== undefined) user.settings.soundEnabled = soundEnabled;
+        if (desktopNotifications !== undefined) user.settings.desktopNotifications = desktopNotifications;
+
+        await user.save();
+        return res.status(200).json(user.settings);
+    } catch (error) {
+        console.error("Error updating settings:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const blockUser = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { userId: targetId } = req.body;
+
+        if (userId.toString() === targetId.toString()) {
+            return res.status(400).json({ message: "Cannot block yourself" });
+        }
+
+        const user = await User.findById(userId);
+        if (user.blockedUsers.includes(targetId)) {
+            return res.status(400).json({ message: "User already blocked" });
+        }
+
+        user.blockedUsers.push(targetId);
+        await user.save();
+        
+        // Return full list or just success? Full list is nice for updates.
+        // We can just return success for now or the list id.
+        return res.status(200).json({ message: "User blocked successfully", blockedUsers: user.blockedUsers });
+    } catch (error) {
+        console.error("Error blocking user:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const unblockUser = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { userId: targetId } = req.body;
+
+        const user = await User.findById(userId);
+        user.blockedUsers = user.blockedUsers.filter(id => id.toString() !== targetId.toString());
+        await user.save();
+
+        return res.status(200).json({ message: "User unblocked successfully", blockedUsers: user.blockedUsers });
+    } catch (error) {
+        console.error("Error unblocking user:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const getBlockedUsers = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId).populate("blockedUsers", "username displayName avatarURL");
+        
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        return res.status(200).json(user.blockedUsers);
+    } catch (error) {
+        console.error("Error fetching blocked users:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

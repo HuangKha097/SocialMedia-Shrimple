@@ -11,7 +11,14 @@
     --primary-borderColor: #303030;
     --primary-blockBackgroundColor: #242424;
     --primary-hoverBackgroundColor: #4b3528;
+}
 
+:root.light {
+    --primary-backgroundColor: #f2f4f7;
+    --primary-textColor: #2a2a2a;
+    --primary-borderColor: #dee2e6;
+    --primary-blockBackgroundColor: #ffffff;
+    --primary-hoverBackgroundColor: #f8f9fa;
 }
 
 /* Common */

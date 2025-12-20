@@ -6,13 +6,13 @@ import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const sendDirectMessage = async (req, res) => {
     try {
-        const {recipientId, content, conversationId} = req.body;
+        const {recipientId, content, conversationId, image, file, type} = req.body;
         const senderId = req.user._id;
 
         let conversation;
 
-        if (!content) {
-            return res.status(400).json({message: "Content not found"});
+        if (!content && !image && !file) {
+            return res.status(400).json({message: "Content or file not found"});
         }
 
         // 1. Nếu Client có gửi conversationId -> Tìm theo ID
@@ -42,11 +42,20 @@ export const sendDirectMessage = async (req, res) => {
             });
         }
 
-        const message = await Message.create({
+        const messageData = {
             conversationId: conversation._id,
             senderId,
-            content,
-        });
+            content: content || "",
+            messageType: type || 'text',
+        };
+
+        if (image) messageData.imgUrl = image;
+        if (file) messageData.fileUrl = file;
+        if ((image || file) && (!type || type === 'text')) {
+             messageData.messageType = image ? 'image' : 'file';
+        }
+
+        const message = await Message.create(messageData);
 
         upDateConversationAfterCreateMessage(conversation, message, senderId);
         await conversation.save();
@@ -67,7 +76,7 @@ export const sendDirectMessage = async (req, res) => {
 
 export const sendGroupMessage = async (req, res) => {
     try {
-        const {conversationId, content} = req.body;
+        const {conversationId, content, image, file, type} = req.body;
         const senderId = req.user._id;
 
         let conversation = req.conversation;
@@ -75,14 +84,24 @@ export const sendGroupMessage = async (req, res) => {
             conversation = await Conversation.findById(conversationId).populate('participants.userId');
         }
 
-        if (!content) {
-            return res.status(400).json({message: "Content not found"});
+        if (!content && !image && !file) {
+            return res.status(400).json({message: "Content or file not found"});
         }
-        const message = await Message.create({
+        
+        const messageData = {
             conversationId,
             senderId,
-            content,
-        })
+            content: content || "",
+            messageType: type || 'text',
+        };
+        
+        if (image) messageData.imgUrl = image;
+        if (file) messageData.fileUrl = file;
+        if ((image || file) && (!type || type === 'text')) {
+             messageData.messageType = image ? 'image' : 'file';
+        }
+
+        const message = await Message.create(messageData)
 
         upDateConversationAfterCreateMessage(conversation, message, senderId);
         await conversation.save();
@@ -109,5 +128,57 @@ export const sendGroupMessage = async (req, res) => {
     }catch (error) {
         console.error("Error in sendGroupMessage", error);
         return res.status(500).json({message: "System error"});
+    }
+}
+
+export const reactToMessage = async (req, res) => {
+    try {
+        const { messageId, reaction } = req.body;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+
+        const existingReactionIndex = message.reactions.findIndex(r => r.userId.toString() === userId.toString());
+
+        if (existingReactionIndex !== -1) {
+            // User already reacted
+            if (message.reactions[existingReactionIndex].reaction === reaction) {
+                // Same reaction -> remove it
+                message.reactions.splice(existingReactionIndex, 1);
+            } else {
+                // Different reaction -> update it
+                message.reactions[existingReactionIndex].reaction = reaction;
+            }
+        } else {
+            // New reaction
+            message.reactions.push({ userId, reaction });
+        }
+
+        await message.save();
+
+        const populatedMessage = await Message.findById(messageId).populate('reactions.userId', 'username displayName avatarURL');
+
+        // Get conversation to find participants for socket
+        const conversation = await Conversation.findById(message.conversationId).populate('participants.userId');
+        
+        if (conversation && conversation.participants) {
+             conversation.participants.forEach(p => {
+                const participantId = p.userId?._id?.toString() || p.userId?.toString();
+
+                const socketId = getReceiverSocketId(participantId);
+                if (socketId) {
+                    io.to(socketId).emit("messageReaction", { messageId, reactions: populatedMessage.reactions, conversationId: message.conversationId });
+                }
+            });
+        }
+
+        return res.status(200).json({ message: "Reaction updated", reactions: populatedMessage.reactions });
+
+    } catch (error) {
+        console.error("Error in reactToMessage", error);
+        return res.status(500).json({ message: "System error" });
     }
 }

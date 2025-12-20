@@ -13,6 +13,7 @@ import SinglePostPage from "./pages/SinglePostPage.jsx";
 import SavedPostsContainer from "./components/posts/SavedPostsContainer.jsx";
 import FriendsContainer from "./components/posts/FriendsContainer.jsx";
 import ProfileContainer from "./components/posts/ProfileContainer.jsx";
+import VideoFeed from "./pages/VideoFeed.jsx";
 
 import CallModal from "./components/chat/CallModal.jsx";
 import { useCallStore } from "./stores/useCallStore.js";
@@ -25,13 +26,23 @@ const ChatContainerWrapper = () => {
 };
 
 const App = () => {
-    const {isLight, setTheme} = useThemeStore();
+    const {isLight, primaryColor} = useThemeStore();
     const { subscribeToCallEvents, unsubscribeFromCallEvents } = useCallStore();
     const { user } = useAuthStore(); // Check if user is logged in to subscribe
 
     useEffect(() => {
-        setTheme(isLight);
+        if (isLight) {
+            document.documentElement.classList.add("light");
+        } else {
+            document.documentElement.classList.remove("light");
+        }
     }, [isLight]);
+
+    useEffect(() => {
+        if (primaryColor) {
+             document.documentElement.style.setProperty("--primary-color", primaryColor);
+        }
+    }, [primaryColor]);
 
     // Subscribe to call events
     useEffect(() => {
@@ -63,6 +74,7 @@ const App = () => {
                             <Route path="/feed/saved" element={<SavedPostsContainer />}/>
                             <Route path="/feed/friends" element={<FriendsContainer />}/>
                             <Route path="/feed/profile/:userId" element={<ProfileContainer />}/>
+                            <Route path="/video" element={<VideoFeed />}/>
                         </Route>
                     </Route>
                 </Routes>

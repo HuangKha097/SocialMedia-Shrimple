@@ -82,7 +82,7 @@ const PostsSidebar = ({ onCloseSetting }) => {
                         <Bookmark size={24} />
                         <span>Saved</span>
                     </div>
-                    <div className={cx('menu-item')}>
+                    <div className={cx('menu-item')} onClick={() => navigate('/video')} style={{cursor: 'pointer'}}>
                         <Video size={24} />
                         <span>Video</span>
                     </div>

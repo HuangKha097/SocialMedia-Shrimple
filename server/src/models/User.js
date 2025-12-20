@@ -66,6 +66,15 @@ const userSchema = new mongoose.Schema(
             ref: "Post",
             default: []
         }],
+        blockedUsers: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: []
+        }],
+        settings: {
+            soundEnabled: { type: Boolean, default: true },
+            desktopNotifications: { type: Boolean, default: false }
+        }
     },
     {
         timestamps: true, // createdAt, updatedAt
