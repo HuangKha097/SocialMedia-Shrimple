@@ -69,6 +69,7 @@ export const useAuthStore = create(
                     set({loading: false});
                 }
             },
+
             signOut: async () => {
                 try {
                     toast.success("Sign Out Successfully!");

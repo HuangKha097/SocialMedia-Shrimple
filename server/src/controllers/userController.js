@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 export const authMe = async (req, res) => {
     try {
@@ -123,9 +124,14 @@ export const updateProfile = async (req, res) => {
         // if (email) updateData.email = email; // Changing email usually requires verification
 
         if (req.file) {
-            updateData.avatarUrl = `/public/uploads/posts/${req.file.filename}`; // reusing post uploads folder for now or create generic
-            // Better to use specific folder but for now stick to existing middleware config or uploadMiddleware needs update? 
-            // uploadMiddleware uploads to 'public/uploads/posts'. Let's reuse or fix middleware usage.
+            const uploadResult = await uploadToCloudinary(req.file.path, "shrimple_avatars");
+            
+            if (uploadResult) {
+                updateData.avatarURL = uploadResult.secure_url;
+                updateData.avatarId = uploadResult.public_id;
+            } else {
+                 return res.status(500).json({ message: "Failed to upload avatar" });
+            }
         }
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true }).select("-password");

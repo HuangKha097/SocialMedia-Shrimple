@@ -63,14 +63,17 @@ export const useCallStore = create((set, get) => ({
     },
     
     // Call Actions (emitters)
-    initiateCall: (recipientId, isVideo = false) => {
+    initiateCall: (recipientId, isVideo = false, recipientInfo = null) => {
          // Set state to active so Modal opens and starts getting media/signaling
          set({ 
              isCallActive: true, 
              isCallEnded: false, 
              callType: isVideo ? "video" : "audio",
-             // We reuse callerInfo to store the person we are talking to, or add a new field
-             callerInfo: { id: recipientId } 
+             // We reuse callerInfo to store the person we are talking to
+             // If we have full recipientInfo, use it for better UI (name, avatar)
+             callerInfo: recipientInfo 
+                ? { id: recipientId, name: recipientInfo.displayName || recipientInfo.username, avatar: recipientInfo.avatarUrl } 
+                : { id: recipientId, name: "User" } 
          });
     },
     

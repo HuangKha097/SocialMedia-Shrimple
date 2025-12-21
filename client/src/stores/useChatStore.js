@@ -21,7 +21,12 @@ export const useChatStore = create(
             suggestedFriends: [],
             isFriendRequestsLoading: false,
 
-            setActiveConversationId: (id) => set({activeConversationId: id}),
+            setActiveConversationId: (id) => {
+                set({activeConversationId: id});
+                if (id && !id.startsWith('temp_')) {
+                    get().markAsReadAction(id);
+                }
+            },
 
             reset: () => {
                 set({
@@ -399,7 +404,11 @@ export const useChatStore = create(
                         } else {
                             // Add
                             currentReactions.push({
-                                userId: user, // Optimistically use full user object
+                                userId: {
+                                    _id: user._id, 
+                                    displayName: user.displayName, 
+                                    username: user.username
+                                }, // Optimistically use full user object with name
                                 reaction
                             });
                         }
@@ -456,6 +465,68 @@ export const useChatStore = create(
                     // Revert or fetch messages again could be done here
                 }
             },
+            
+            markAsReadAction: async (conversationId) => {
+                const { user } = useAuthStore.getState();
+                try {
+                    // 1. Optimistic Update
+                    set((state) => {
+                         const convoIndex = state.conversations.findIndex(c => c._id === conversationId);
+                         if (convoIndex !== -1) {
+                             const updatedConversations = [...state.conversations];
+                             
+                             // Reset unread count logic
+                             // Need to handle both Map and plain object structure just in case
+                             // Mongoose Maps often come as objects in JSON unless strictly typed
+                             
+                             // Simple approach: Just assume we receive an object map { userId: count, ... } from backend
+                             // But here we might just want to set the whole unreadCounts object/map for 'me' to 0
+                             
+                             const currentUnread = updatedConversations[convoIndex].unreadCounts || {};
+                             
+                             // If it's a Map in local state (unlikely from JSON), convert or set.
+                             // Safest: clone object and set logic
+                             
+                             // However, since we track simple unread counts mostly effectively by just resetting:
+                             // Let's assume we refresh the conversation or just set it to 0 for current user locally.
+                             
+                             // But wait, the UI uses `unreadCounts` which might be the number itself or the map.
+                             // Let's check how UI renders unread count.
+                             
+                             // Looking at socket logic (line 500):
+                             // unreadCounts: isActive ? ... : unreadCounts + 1
+                             // It implies unreadCounts MIGHT be a number in the socket update logic? 
+                             // Wait, line 498 checks `updatedConversations[conversationIndex].unreadCounts instanceof Map`
+                             
+                             // Let's fix the structure to be consistent. 
+                             // Backend sends unreadCounts as Map-like object { "userId": 5 }.
+                             
+                             // If we want to reset for ME:
+                             let newUnreadCounts = updatedConversations[convoIndex].unreadCounts;
+                             if (newUnreadCounts && typeof newUnreadCounts === 'object') {
+                                 newUnreadCounts = { ...newUnreadCounts, [user._id]: 0 };
+                             } else {
+                                 // Fallback if it was somehow a number? Or init it
+                                 newUnreadCounts = { [user._id]: 0 };
+                             }
+
+                             updatedConversations[convoIndex] = {
+                                 ...updatedConversations[convoIndex],
+                                 unreadCounts: newUnreadCounts
+                             };
+
+                             return { conversations: updatedConversations };
+                         }
+                         return {};
+                    });
+
+                    // 2. Call API
+                    await chatService.markAsRead(conversationId);
+                    
+                } catch (error) {
+                    console.error("Failed to mark as read:", error);
+                }
+            },
 
             subscribeToMessages: () => {
                 const { socket } = useAuthStore.getState();
@@ -495,9 +566,13 @@ export const useChatStore = create(
                                 lastMessageAt: new Date().toISOString(),
                                 unreadCounts: isActive 
                                     ? updatedConversations[conversationIndex].unreadCounts 
-                                    : (updatedConversations[conversationIndex].unreadCounts instanceof Map 
-                                        ? updatedConversations[conversationIndex].unreadCounts 
-                                        : 0) + 1 
+                                    : (() => {
+                                        // Helper to increment unread count safely
+                                        const currentCounts = updatedConversations[conversationIndex].unreadCounts || {};
+                                        const myId = useAuthStore.getState().user?._id;
+                                        const currentVal = currentCounts[myId] || 0;
+                                        return { ...currentCounts, [myId]: currentVal + 1 };
+                                    })()
                             };
                             updatedConversations.splice(conversationIndex, 1);
                             updatedConversations.unshift(updatedConvo);

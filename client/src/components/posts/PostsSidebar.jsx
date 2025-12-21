@@ -56,6 +56,13 @@ const PostsSidebar = ({ onCloseSetting }) => {
                         >
                             <Bookmark size={20} />
                         </button>
+                        <button 
+                            className={cx('btn', { active: location.pathname === '/video' })} 
+                            onClick={() => navigate('/video')} 
+                            title="Video Feed"
+                        >
+                            <Video size={20} />
+                        </button>
                     </div>
                 </div>
 
@@ -74,15 +81,31 @@ const PostsSidebar = ({ onCloseSetting }) => {
 
             <div className={cx('body')}>
                 <div className={cx('menu-list')}>
-                    <div className={cx('menu-item')} onClick={() => navigate('/feed/friends')} style={{cursor: 'pointer'}}>
+                    <div 
+                        className={cx('menu-item', { active: location.pathname === '/feed' })} 
+                        onClick={() => navigate('/feed')}
+                    >
+                        <Newspaper size={24} />
+                        <span>Feed</span>
+                    </div>
+                    <div 
+                        className={cx('menu-item', { active: location.pathname === '/feed/friends' })} 
+                        onClick={() => navigate('/feed/friends')} 
+                    >
                         <Users size={24} />
                         <span>Friends</span>
                     </div>
-                    <div className={cx('menu-item')} onClick={() => navigate('/feed/saved')} style={{cursor: 'pointer'}}>
+                    <div 
+                        className={cx('menu-item', { active: location.pathname === '/feed/saved' })} 
+                        onClick={() => navigate('/feed/saved')} 
+                    >
                         <Bookmark size={24} />
                         <span>Saved</span>
                     </div>
-                    <div className={cx('menu-item')} onClick={() => navigate('/video')} style={{cursor: 'pointer'}}>
+                    <div 
+                        className={cx('menu-item', { active: location.pathname.startsWith('/video') })} 
+                        onClick={() => navigate('/video')} 
+                    >
                         <Video size={24} />
                         <span>Video</span>
                     </div>

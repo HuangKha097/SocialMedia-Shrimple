@@ -36,11 +36,9 @@ const SignInPage = () => {
 
     const onSubmit = async (data) => {
         const {email, password} = data;
-
         try {
             const res = await signIn(email, password)
-
-            res && navigate("/");
+            res.success && navigate("/");
         } catch (error) {
             console.error(error);
         }

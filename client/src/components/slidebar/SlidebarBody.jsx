@@ -13,6 +13,7 @@ const SlidebarBody = () => {
     const { conversations, friendRequests, friends, fetchFriends } = useChatStore();
     const { user } = useAuthStore();
     const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'groups', 'requests'
+    const [searchText, setSearchText] = useState('');
 
     useEffect(() => {
         if (fetchFriends) fetchFriends();
@@ -70,6 +71,42 @@ const SlidebarBody = () => {
     // Lọc Group riêng
     const groupConversations = conversations?.filter((convo) => convo.isGroup) || [];
 
+    // --- LOGIC SEARCH ---
+    const filteredFriends = useMemo(() => {
+        if (!searchText.trim()) return combinedList;
+        const lowerSearch = searchText.toLowerCase();
+
+        return combinedList.filter(item => {
+            // Find partner name (similar logic to ChatCard)
+            // Note: Since 'item' can be a real convo or temp object
+            // If it's a temp object (isGroup=false), participants[0] is the friend.
+            // If it's a real convo (isGroup=false), find partner.
+            
+            const participants = item.participants || [];
+            let partner;
+            
+            if (item.isGroup) {
+                 // Should not happen here since combinedList excludes groups, but just safely:
+                 return (item.name || item.group?.name || "").toLowerCase().includes(lowerSearch);
+            } else {
+                partner = participants.find(p => p._id !== user?._id) || participants[0];
+            }
+
+            const name = partner?.displayName || partner?.username || "";
+            return name.toLowerCase().includes(lowerSearch);
+        });
+    }, [combinedList, searchText, user]);
+
+    const filteredGroups = useMemo(() => {
+        if (!searchText.trim()) return groupConversations;
+        const lowerSearch = searchText.toLowerCase();
+
+        return groupConversations.filter(group => {
+            const name = group.name || group.group?.name || "";
+            return name.toLowerCase().includes(lowerSearch);
+        });
+    }, [groupConversations, searchText]);
+
     const countFriends = combinedList.length;
     const countGroups = groupConversations.length;
     const countFriendRequest = friendRequests.length;
@@ -77,9 +114,9 @@ const SlidebarBody = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'friends':
-                return <BodyFriendsChat convo={combinedList} />;
+                return <BodyFriendsChat convo={filteredFriends} />;
             case 'groups':
-                return <BodyGroupsChat convo={groupConversations} />;
+                return <BodyGroupsChat convo={filteredGroups} />;
             case 'requests':
                 return <BodyRequests friendRequests={friendRequests} />;
             default:
@@ -94,6 +131,8 @@ const SlidebarBody = () => {
                     type="text"
                     placeholder="Search friends, groups..."
                     className={cx("search-input")}
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
                 />
             </div>
             <ul className={cx("slidebar-body-navigation")}>

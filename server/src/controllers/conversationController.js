@@ -182,3 +182,31 @@ export const getSharedMedia = async (req, res) => {
         return res.status(500).json({ message: "System error" });
     }
 }
+
+export const markConversationAsRead = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const userId = req.user._id;
+
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: "Conversation not found" });
+        }
+
+        // Reset unread count for this user
+        // Note: Map keys in Mongoose are strings.
+        if (conversation.unreadCounts) {
+            conversation.unreadCounts.set(userId.toString(), 0);
+        } else {
+            conversation.unreadCounts = new Map();
+            conversation.unreadCounts.set(userId.toString(), 0);
+        }
+
+        await conversation.save();
+
+        return res.status(200).json({ message: "Marked as read", unreadCounts: conversation.unreadCounts });
+    } catch (error) {
+        console.error("Error marking conversation as read", error);
+        return res.status(500).json({ message: "System error" });
+    }
+}

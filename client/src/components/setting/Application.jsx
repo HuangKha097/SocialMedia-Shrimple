@@ -12,11 +12,11 @@ const Application = () => {
                 <h4>About</h4>
                 <div className={cx('form-group')}>
                     <label>Version</label>
-                    <p style={{fontSize: '1.4rem', color: '#ccc'}}>1.0.0 (Beta)</p>
+                    <p style={{fontSize: '1.4rem', color: '#ccc'}}>Beta</p>
                 </div>
                 <div className={cx('form-group')}>
                     <label>Developer</label>
-                    <p style={{fontSize: '1.4rem', color: '#ccc'}}>Huang Kha Team</p>
+                    <p style={{fontSize: '1.4rem', color: '#ccc'}}>Quach Hoang Kha</p>
                 </div>
             </div>
             

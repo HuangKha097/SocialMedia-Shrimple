@@ -21,6 +21,12 @@ const ChatBody = () => {
     // Lấy dữ liệu tin nhắn từ store
     const currentMessagesData = messages[activeConversationId];
     const messageList = currentMessagesData?.items || [];
+    const hasMore = currentMessagesData?.hasMore;
+    
+    // Ref cho container để tính toán scroll
+    const containerRef = useRef(null);
+    const prevScrollHeightRef = useRef(0);
+    const isFetchingRef = useRef(false);
 
     // --- 1. Tự động tải tin nhắn nếu chưa có (Backup cho trường hợp F5) ---
     useEffect(() => {
@@ -31,8 +37,41 @@ const ChatBody = () => {
 
     // --- 2. Tự động cuộn xuống dưới cùng ---
     useEffect(() => {
-        endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+        // Chỉ cuộn xuống đáy nếu:
+        // A. Lần đầu load (prevScrollHeightRef.current === 0)
+        // B. Tin nhắn mới được thêm vào CUỐI (không phải load more từ nextCursor)
+        
+        if (!containerRef.current) return;
+
+        // Nếu chiều cao tăng lên và chúng ta KHÔNG đang ở trạng thái loading more (đơn giản hoá bằng cách xem scrollHeight)
+        // Logic đơn giản: Nếu sender là mình hoặc đang ở gần đáy -> auto scroll
+        // Nhưng phức tạp hơn là phân biệt "Load More" vs "New Message".
+        
+        // Cách xử lý: 
+        // Nếu fetch old messages -> Scroll height tăng, nhưng scrollTop phải giữ nguyên vị trí tương đối
+        if (isFetchingRef.current) {
+             const newScrollHeight = containerRef.current.scrollHeight;
+             const diff = newScrollHeight - prevScrollHeightRef.current;
+             containerRef.current.scrollTop = diff; // Jump to previous relative position
+             isFetchingRef.current = false;
+        } else {
+             // Default behaviour: Scroll to bottom for new messages or initial load
+             // (Optional: Check if user is already near bottom before forcing scroll)
+             endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+        
     }, [messageList]);
+
+    const handleScroll = (e) => {
+        const { scrollTop, scrollHeight } = e.target;
+        
+        // Nếu cuộn lên đỉnh và còn tin nhắn cũ -> Load more
+        if (scrollTop === 0 && hasMore) {
+            isFetchingRef.current = true;
+            prevScrollHeightRef.current = scrollHeight; // Lưu lại chiều cao trước khi load
+            fetchMessages(activeConversationId);
+        }
+    };
 
     const formatTime = (isoString) => {
         if (!isoString) return "";
@@ -53,7 +92,18 @@ const ChatBody = () => {
     };
 
     return (
-        <div className={cx('chat-body-wrapper')}>
+        <div 
+            className={cx('chat-body-wrapper')} 
+            ref={containerRef}
+            onScroll={handleScroll}
+        >
+
+            {/* Loading Indicator for older messages */}
+            {hasMore && isFetchingRef.current && (
+                 <div style={{ textAlign: 'center', padding: '10px', color: '#888' }}>
+                    Loading...
+                 </div>
+            )}
 
             {/* Hiển thị thông báo nếu chưa có tin nhắn */}
             {messageList.length === 0 && (
@@ -90,7 +140,7 @@ const ChatBody = () => {
                     />
                 );
             })}
-             {/* <div ref={endOfMessagesRef} /> */}
+             <div ref={endOfMessagesRef} /> 
         </div>
     );
 };

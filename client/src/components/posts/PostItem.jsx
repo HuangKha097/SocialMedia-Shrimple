@@ -135,6 +135,15 @@ const PostItem = ({ post, currentUser, onLike, onComment, onDelete }) => {
                 />
             )}
             
+            {post.video && (
+                <video 
+                    controls
+                    src={post.video.startsWith('http') ? post.video : `http://localhost:5001${post.video}`} 
+                    className={cx('post-image')} 
+                    style={{maxHeight: '500px', backgroundColor: 'black'}}
+                />
+            )}
+            
             <div className={cx('post-actions')}>
                 <button className={cx({liked: isLiked})} onClick={() => onLike(post._id)}>
                     <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />

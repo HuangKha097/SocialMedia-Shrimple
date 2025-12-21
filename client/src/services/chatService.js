@@ -46,5 +46,9 @@ export const chatService = {
     async getSharedMedia(conversationId) {
         const res = await api.get(`/api/conversations/${conversationId}/media`);
         return res.data;
+    },
+    async markAsRead(conversationId) {
+        const res = await api.patch(`/api/conversations/${conversationId}/read`);
+        return res.data;
     }
 }

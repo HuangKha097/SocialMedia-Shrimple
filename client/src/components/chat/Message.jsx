@@ -3,6 +3,8 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/Message.module.scss';
 import profilePic_test from "../../../public/favicon.png";
 import { X } from 'lucide-react';
+import { useChatStore } from "../../stores/useChatStore.js";
+import { useAuthStore } from "../../stores/useAuthStore.js";
 
 const cx = classNames.bind(styles);
 
@@ -186,9 +188,29 @@ const ReactionItem = ({ emoji, users }) => {
     const [showTooltip, setShowTooltip] = useState(false);
 
     // Format users list
-    const userNames = users.map(u => 
-        typeof u === 'object' ? (u.displayName || u.username) : "Unknown"
-    );
+    // Format users list
+    const { friends } = useChatStore.getState();
+    const { user: currentUser } = useAuthStore.getState();
+
+    const userNames = users.map(u => {
+        // 1. If 'u' is the full user object (populated)
+        if (typeof u === 'object' && (u.displayName || u.username)) {
+             // Check if it's me
+             if (u._id === currentUser?._id) return "You";
+             return u.displayName || u.username;
+        }
+
+        // 2. If 'u' is just an ID string
+        const userIdStr = typeof u === 'object' ? u._id : u;
+        
+        if (userIdStr === currentUser?._id) return "You";
+
+        // Try to find in friends list
+        const friend = friends.find(f => f._id === userIdStr);
+        if (friend) return friend.displayName || friend.username;
+
+        return "Unknown";
+    });
 
     const displayNames = userNames.slice(0, 5);
     const remaining = userNames.length - 5;

@@ -19,6 +19,24 @@ const ChatCard = ({ props }) => {
     const partner = props?.participants?.find(p => p._id !== currentUser?._id) || props?.participants?.[0];
     
     const isOnline = onlineUsers.includes(partner?._id);
+    
+    // Correctly extract unread count for current user
+    const getUnreadCount = () => {
+         if (!props.unreadCounts) return 0;
+         
+         // Assuming it's a map-like object { userId: count, ... }
+         // Handle both Map object and plain object
+         if (props.unreadCounts instanceof Map) {
+             return props.unreadCounts.get(currentUser?._id) || 0;
+         } else if (typeof props.unreadCounts === 'object') {
+             return props.unreadCounts[currentUser?._id] || 0;
+         }
+         
+         // Fallback if it's a number (legacy or incorrect state)
+         return typeof props.unreadCounts === 'number' ? props.unreadCounts : 0;
+    };
+
+    const unreadCount = getUnreadCount();
 
     const formatTime = (dateString) => {
         if (!dateString) return '';
@@ -72,7 +90,7 @@ const ChatCard = ({ props }) => {
 
                 <p
                     className={cx('last-message')}
-                    style={{ fontWeight: (props.unreadCounts > 0) ? 'bold' : 'normal', color: (props.unreadCounts > 0) ? '#000' : '#c8c8c8' }}
+                    style={{ fontWeight: (unreadCount > 0) ? 'bold' : 'normal', color: (unreadCount > 0) ? '#000' : '#c8c8c8' }}
                 >
                     {/* Kiểm tra nếu là tin nhắn của mình thì thêm chữ "You: " (Tuỳ chọn) */}
                     {/* {props?.lastMessage?.senderId === currentUser?._id && "You: "} */}
@@ -82,9 +100,9 @@ const ChatCard = ({ props }) => {
 
             <div className={cx('status-wrapper')}>
                 <p className={cx('time')}>{formatTime(props?.lastMessage?.createdAt)}</p>
-                {props?.unreadCounts > 0 && (
+                {unreadCount > 0 && (
                     <span className={cx('unread-count')}>
-                        {props?.unreadCounts > 9 ? '9+' : props?.unreadCounts}
+                        {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
             </div>

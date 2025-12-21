@@ -108,8 +108,16 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
     };
 
     const handleCall = (video) => {
-        if (!isGroup && partnerId) {
-            initiateCall(partnerId, video);
+        // Find partner ID again if needed or use partnerId calculated above
+        const partnerToCall = !isGroup 
+            ? participants.find(p => p._id !== currentUser?._id) 
+            : null;
+
+        if (partnerToCall) {
+            initiateCall(partnerToCall._id, video, partnerToCall);
+        } else if (partnerId) {
+             // Fallback to partnerId calculated in render checks
+             initiateCall(partnerId, video, { _id: partnerId, displayName: displayName });
         }
     };
 

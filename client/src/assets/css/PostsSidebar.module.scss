@@ -55,7 +55,8 @@
                   
                   &.active {
                       color: var(--primary-color);
-                      background-color: rgba(var(--primary-rgb), 0.1);
+                      background-color: color-mix(in srgb, var(--primary-color), transparent 85%);
+                      border: 1px solid color-mix(in srgb, var(--primary-color), transparent 70%);
                   }
             }
         }
@@ -141,6 +142,12 @@
             
             &:hover {
                 background-color: var(--primary-hoverBackgroundColor);
+            }
+
+            &.active {
+                color: var(--primary-color);
+                background-color: color-mix(in srgb, var(--primary-color), transparent 85%);
+                font-weight: 600;
             }
             
             span {

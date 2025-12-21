@@ -53,6 +53,7 @@ export const usePostStore = create((set, get) => ({
             // The API returns the updated post.
             set((state) => ({
                 posts: state.posts.map((post) => (post._id === postId ? res.data : post)),
+                videoPosts: state.videoPosts.map((post) => (post._id === postId ? res.data : post)), // Also update video feed
             }));
         } catch (error) {
             console.error(error);
@@ -65,6 +66,7 @@ export const usePostStore = create((set, get) => ({
             const res = await api.put(`/api/posts/comment/${postId}`, { text });
             set((state) => ({
                 posts: state.posts.map((post) => (post._id === postId ? res.data : post)),
+                videoPosts: state.videoPosts.map((post) => (post._id === postId ? res.data : post)), // Also update video feed
             }));
             toast.success("Comment added");
         } catch (error) {

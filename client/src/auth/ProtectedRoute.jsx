@@ -5,7 +5,7 @@ import {Navigate, Outlet} from "react-router";
 import {IndeterminateLoader} from "../components/common/loading/Loading.jsx"
 
 const ProtectedRoute = () => {
-    const {accessToken, user, loading, refresh, fetchMe} = useAuthStore()
+    const {accessToken, user, loading, refresh, fetchMe, connectSocket} = useAuthStore()
     const [starting, setStarting] = useState(true);
 
     const init = async () => {
@@ -14,6 +14,8 @@ const ProtectedRoute = () => {
         }
         if (accessToken && !user) {
             await fetchMe();
+        } else if (user) {
+            connectSocket();
         }
 
         setStarting(false);
