@@ -28,12 +28,14 @@ const GroupChatCard = ({ props }) => {
         return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
     };
 
+    const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
+
     // 3. Logic hiển thị Avatar Group
     const renderAvatar = () => {
         const getAvatarSrc = (url) => {
             if (!url) return default_avt;
             if (url.startsWith('http') || url.startsWith('data:')) return url;
-            return `http://localhost:5001${url}`;
+            return `${BASE_URL}${url}`;
         };
 
         if (groupInfo?.avatarURL) {

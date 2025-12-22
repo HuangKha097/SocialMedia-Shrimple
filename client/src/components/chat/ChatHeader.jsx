@@ -61,12 +61,14 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
     }, [isGroup, partner, friends]);
 
 
+    const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
+
     // --- 2. HÀM RENDER AVATAR ---
     const renderAvatar = () => {
         const getAvatarSrc = (url) => {
             if (!url) return defaultAvatar;
             if (url.startsWith('http') || url.startsWith('data:')) return url;
-            return `http://localhost:5001${url}`;
+            return `${BASE_URL}${url}`;
         };
 
         // A. Nếu là Group

@@ -78,6 +78,34 @@ const ChatCard = ({ props }) => {
         }
     }
 
+    const getAvatarSrc = (url) => {
+        if (!url) return default_avt;
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        // In local dev we use 5001, but in prod we might need relative path if proxy is set up or absolute.
+        // Given axios setup, simple relative path usually won't work for img src unless it's handled by server static file.
+        // But our server serves /public via express static. 
+        // Best to use full URL logic consistent with GroupChatCard
+        return `http://localhost:5001${url}`; // NOTE: This hardcodes localhost:5001 which is bad for PROD.
+        // FIXME: Should use a helper that knows the base URL?
+    };
+
+    // Better implementation matching ChatHeader/ChatInfo logic 
+    // BUT we need to be careful about environment. 
+    // Let's use the same logic as elsewhere for now, assuming the user will fix the hardcoded localhost later or globally.
+    // Actually, let's fix the hardcoding right now by using a relative path if possible or window.location.origin for dev? 
+    // No, server is on port 5001. Client 5173.
+    // For netlify, server is on shrimple.onrender.com.
+    // So we need a proper config.
+
+    // TEMPORARY FIX: Just match the logic used in other components, but replace localhost with conditional
+    const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
+
+    const getSafeAvatar = (url) => {
+        if (!url) return default_avt;
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        return `${BASE_URL}${url}`;
+    }
+
     return (
         <div
             className={cx('chat-card-wrapper', { active: (Boolean(activeConversationId) && props._id === activeConversationId) })}
@@ -87,7 +115,7 @@ const ChatCard = ({ props }) => {
             <div className={cx('avatar-wrapper')}>
                 {/* 4. Dùng avatar của partner đã tìm được */}
                 <img
-                    src={partner?.avatarURL ? (partner.avatarURL.startsWith('http') ? partner.avatarURL : `http://localhost:5001${partner.avatarURL}`) : default_avt}
+                    src={getSafeAvatar(partner?.avatarURL)}
                     alt="avatar"
                     className={cx('avatar')}
                     onError={(e) => { e.target.src = default_avt }}

@@ -71,11 +71,13 @@ const ChatInfo = ({ chat, onClose }) => {
         partnerId = partner?._id;
     }
 
+    const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
+
     const renderAvatar = () => {
         const getAvatarSrc = (url) => {
             if (!url) return defaultAvatar;
             if (url.startsWith('http') || url.startsWith('data:')) return url;
-            return `http://localhost:5001${url}`;
+            return `${BASE_URL}${url}`;
         };
 
         if (isGroup) {
