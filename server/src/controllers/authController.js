@@ -167,3 +167,42 @@ export const refreshToken = async (req, res) => {
 }
 
 
+
+export const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        // protectedRoute attaches 'req.user', not 'req.userId'
+        const userId = req.user._id; 
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: "Both old and new passwords are required." });
+        }
+        
+        if (newPassword.length < 6) {
+             return res.status(400).json({ message: "New password must be at least 6 characters." });
+        }
+
+        // We need to re-fetch user because req.user from middleware has .select("-password")
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Verify old password
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Incorrect old password." });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        return res.status(200).json({ message: "Password changed successfully." });
+    } catch (error) {
+        console.error("Error changing password:", error);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+};

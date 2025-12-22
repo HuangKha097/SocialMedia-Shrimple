@@ -15,7 +15,13 @@ const AccountSettings = ({ handleLogout }) => {
     const [bio, setBio] = useState(user?.bio || "");
     const [avatar, setAvatar] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(user?.avatarURL || null);
+
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // Password Change State
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     const fileInputRef = useRef(null);
 
@@ -67,6 +73,29 @@ const AccountSettings = ({ handleLogout }) => {
             alert("Failed to update profile");
         } finally {
             setIsUpdating(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!oldPassword || !newPassword) {
+            alert("Please fill in both old and new passwords.");
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            await authService.changePassword(oldPassword, newPassword);
+            alert("Password changed successfully! You will be logged out to sign in with your new password.");
+            setOldPassword("");
+            setNewPassword("");
+
+            // Sign out the user
+            handleLogout();
+        } catch (error) {
+            console.error("Failed to change password:", error);
+            alert(error.response?.data?.message || "Failed to change password.");
+        } finally {
+            setIsChangingPassword(false);
         }
     };
 
@@ -136,10 +165,33 @@ const AccountSettings = ({ handleLogout }) => {
             <div className={cx('section')}>
                 <h4>Security</h4>
                 <div className={cx('form-group')}>
-                    <label htmlFor="password">New Password</label>
-                    <input type="password" id="password" placeholder="••••••••" disabled />
-                    <small>Password change coming soon</small>
+                    <label htmlFor="oldPassword">Current Password</label>
+                    <input
+                        type="password"
+                        id="oldPassword"
+                        placeholder="Current Password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                    />
                 </div>
+                <div className={cx('form-group')}>
+                    <label htmlFor="newPassword">New Password</label>
+                    <input
+                        type="password"
+                        id="newPassword"
+                        placeholder="New Password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                </div>
+                <button
+                    className={cx("save-btn")}
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                    style={{ marginTop: '1rem' }}
+                >
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                </button>
             </div>
 
             <div className={cx('section')}>

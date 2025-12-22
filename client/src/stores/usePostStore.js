@@ -7,16 +7,24 @@ export const usePostStore = create((set, get) => ({
     videoPosts: [],
     isLoading: false,
 
-    fetchPosts: async () => {
-        set({ isLoading: true });
+    fetchPosts: async (page = 1, limit = 10) => {
+        if (page === 1) set({ isLoading: true });
         try {
-            const res = await api.get("/api/posts");
-            set({ posts: res.data });
+            const res = await api.get(`/api/posts?page=${page}&limit=${limit}`);
+            if (page === 1) {
+                set({ posts: res.data });
+            } else {
+                set((state) => ({
+                    posts: [...state.posts, ...res.data.filter(p => !state.posts.some(existing => existing._id === p._id))]
+                }));
+            }
+            return res.data; // Return data so UI knows if it should stop fetching
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || "Failed to fetch posts");
+            return [];
         } finally {
-            set({ isLoading: false });
+            if (page === 1) set({ isLoading: false });
         }
     },
 
@@ -36,7 +44,26 @@ export const usePostStore = create((set, get) => ({
             }
 
             const res = await api.post("/api/posts/create", dataToSend); // removed explicit headers
-            set((state) => ({ posts: [res.data, ...state.posts] }));
+            
+            const newPost = res.data;
+            
+            set((state) => {
+                const posts = [newPost, ...state.posts];
+                
+                // If it's a video, add to videoPosts too, ensuring no duplicates
+                let videoPosts = state.videoPosts;
+                // Basic check if it's a video (assuming content type or backend flag, typically check media url or type)
+                // However, for now we just push it if we are in video context or just let fetch reload it.
+                // Better: Check if newPost has video media.
+                // Assuming backend returns 'mediaType' or we infer from url.
+                const isVideo = newPost.mediaUrl && (newPost.mediaUrl.endsWith('.mp4') || newPost.mediaType === 'video');
+                
+                if (isVideo || newPost.mediaUrl) { // Broad check for now as we only upload videos in that modal
+                     videoPosts = [newPost, ...state.videoPosts];
+                }
+                
+                return { posts, videoPosts };
+            });
             toast.success("Post created successfully");
         } catch (error) {
             console.error(error);
@@ -110,7 +137,15 @@ export const usePostStore = create((set, get) => ({
             if (page === 1) {
                 set({ videoPosts: res.data });
             } else {
-                set(state => ({ videoPosts: [...state.videoPosts, ...res.data] }));
+                set(state => {
+                    // Filter out any incoming posts that already exist in the state by ID
+                    const existingIds = new Set(state.videoPosts.map(p => p._id));
+                    const newPosts = res.data.filter(newPost => !existingIds.has(newPost._id));
+                    
+                    if (newPosts.length === 0) return {}; // No new posts to add
+                    
+                    return { videoPosts: [...state.videoPosts, ...newPosts] };
+                });
             }
             return res.data;
         } catch (error) {

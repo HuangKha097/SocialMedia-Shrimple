@@ -87,9 +87,12 @@ const ChatInput = () => {
         setText((prev) => prev + emojiObject.emoji);
     };
 
-    const handleSendMessage = async () => {
-        if ((!text.trim() && !image) || !chatStatus.allowed) return;
+    const [isSending, setIsSending] = useState(false);
 
+    const handleSendMessage = async () => {
+        if ((!text.trim() && !image) || !chatStatus.allowed || isSending) return;
+
+        setIsSending(true);
         const currentConvo = conversations.find(c => c._id === activeConversationId);
         const isGroup = currentConvo?.isGroup && !activeConversationId.toString().startsWith('temp_');
 
@@ -120,11 +123,13 @@ const ChatInput = () => {
         } catch (error) {
             console.error("Failed to send message:", error);
             toast.error(error.response?.data?.message || "Failed to send message");
+        } finally {
+            setIsSending(false);
         }
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !isSending) {
             e.preventDefault();
             handleSendMessage();
         }
@@ -226,7 +231,7 @@ const ChatInput = () => {
                     <button
                         className={cx('btn', 'send-btn')}
                         onClick={handleSendMessage}
-                        disabled={!text.trim() && !image}
+                        disabled={(!text.trim() && !image) || isSending}
                     >
                         <Send size={20} />
                     </button>

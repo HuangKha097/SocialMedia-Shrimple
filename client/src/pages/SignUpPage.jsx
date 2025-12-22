@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "../stores/useAuthStore.js";
 
 import { useNavigate } from "react-router";
+import GlobalLoadingOverlay from "../components/common/GlobalLoadingOverlay.jsx";
 import { toast } from "sonner";
 
 
@@ -154,6 +155,7 @@ const SignUpPage = () => {
                         Sign up with GitHub
                     </button>
                     <p>Already have an account? <span><Link to="/signin">Sign in</Link></span></p>
+                    <GlobalLoadingOverlay />
                 </div>
                 <p className={cx("copyright")}>© 2025 Shrimple. All rights reserved.</p>
             </div>

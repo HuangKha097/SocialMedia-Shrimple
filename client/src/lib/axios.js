@@ -1,5 +1,6 @@
 import {useAuthStore} from "../stores/useAuthStore.js";
 import axios from "axios";
+import { useUIStore } from "../stores/useUIStore.js";
 
 const api = axios.create({
     baseURL:
@@ -10,6 +11,11 @@ const api = axios.create({
 // gắn access token vào req header
 api.interceptors.request.use((config) => {
     const {accessToken} = useAuthStore.getState();
+    
+    // Only show global loading if explicitly requested
+    if (config.globalLoading) {
+        useUIStore.getState().startLoading();
+    }
 
     if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
@@ -20,8 +26,16 @@ api.interceptors.request.use((config) => {
 
 // tự động gọi refresh api khi access token hết hạn
 api.interceptors.response.use(
-    (res) => res,
+    (res) => {
+        if (res.config?.globalLoading) {
+            useUIStore.getState().stopLoading();
+        }
+        return res;
+    },
     async (error) => {
+        if (error.config?.globalLoading) {
+            useUIStore.getState().stopLoading();
+        }
         const originalRequest = error.config;
 
         // những api không cần check

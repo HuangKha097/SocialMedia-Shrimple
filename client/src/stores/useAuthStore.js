@@ -3,6 +3,7 @@ import {persist} from "zustand/middleware";
 import {toast} from "sonner";
 import {authService} from "../services/authService.js";
 import {useChatStore} from "./useChatStore.js";
+import {useUIStore} from "./useUIStore.js";
 import { io } from "socket.io-client";
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
@@ -72,13 +73,22 @@ export const useAuthStore = create(
 
             signOut: async () => {
                 try {
+                    // Attempt to sign out on server, but limit wait to 1 second
+                    // This prevents "infinite spinner" if server is unresponsive
+                    await Promise.race([
+                        authService.signOut(),
+                        new Promise((resolve) => setTimeout(resolve, 1000))
+                    ]);
+                    
                     toast.success("Sign Out Successfully!");
-                    get().disconnectSocket(); // Disconnect
-                    get().clearState();
-                    await authService.signOut();
                 } catch (error) {
-                    console.error(error);
-                    toast.error("Sign Out Failed!");
+                    console.error("Sign Out API Failed or Timed Out:", error);
+                } finally {
+                    // Ensure global loading is turned off even if the request is still pending in background
+                    useUIStore.getState().stopLoading(); 
+                    
+                    get().disconnectSocket();
+                    get().clearState();
                 }
             },
 

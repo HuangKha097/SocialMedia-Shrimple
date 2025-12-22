@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import classNames from "classnames/bind";
 import styles from "../assets/css/SignInPage.module.scss";
 import { Link } from "react-router-dom";
@@ -6,8 +6,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore.js";
 import { useNavigate } from "react-router";
+import GlobalLoadingOverlay from "../components/common/GlobalLoadingOverlay.jsx";
 
 const cx = classNames.bind(styles);
 
@@ -33,6 +35,8 @@ const SignInPage = () => {
             remember: false,
         },
     });
+
+    const [showPassword, setShowPassword] = useState(false);
 
 
     const onSubmit = async (data) => {
@@ -75,13 +79,34 @@ const SignInPage = () => {
                         {/* Password */}
                         <div className={cx("form-row")}>
                             <label htmlFor="password">Password:</label>
-                            <input
-                                {...register("password")}
-                                className={cx("input")}
-                                id="password"
-                                type="password"
-                                placeholder="Enter your password"
-                            />
+                            <div className={cx("input-group")} style={{ position: 'relative' }}>
+                                <input
+                                    {...register("password")}
+                                    className={cx("input")}
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Enter your password"
+                                    style={{ paddingRight: '40px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'rgba(255,255,255,0.6)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                             {errors.password && (
                                 <p className={cx("error")}>{errors.password.message}</p>
                             )}
@@ -127,6 +152,8 @@ const SignInPage = () => {
                             <Link to="/signup">Sign up</Link>
                         </span>
                     </p>
+
+                    <GlobalLoadingOverlay />
                 </div>
 
                 <p className={cx("copyright")}>

@@ -1,11 +1,11 @@
-import React, {useEffect} from 'react';
-import {BrowserRouter, Route, Routes, Navigate} from "react-router-dom";
+import React, { useEffect } from 'react';
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import SignInPage from "./pages/SignInPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
-import {Toaster} from "sonner";
+import { Toaster } from "sonner";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
-import {useThemeStore} from "./stores/useThemeStore.js";
+import { useThemeStore } from "./stores/useThemeStore.js";
 import PostsContainer from "./components/posts/PostsContainer.jsx";
 import ChatContainer from "./components/chat/ChatContainer.jsx";
 import { useOutletContext } from "react-router-dom";
@@ -18,6 +18,9 @@ import VideoFeed from "./pages/VideoFeed.jsx";
 import CallModal from "./components/chat/CallModal.jsx";
 import { useCallStore } from "./stores/useCallStore.js";
 import { useAuthStore } from "./stores/useAuthStore.js";
+import { useUIStore } from "./stores/useUIStore.js";
+// import LoadingSpin from "./components/common/loading/LoadingSpin.jsx"; // Removed from here
+
 
 // Wrapper to consume outlet context and pass it to ChatContainer
 const ChatContainerWrapper = () => {
@@ -26,9 +29,11 @@ const ChatContainerWrapper = () => {
 };
 
 const App = () => {
-    const {isLight, primaryColor} = useThemeStore();
+    const { isLight, primaryColor } = useThemeStore();
     const { subscribeToCallEvents, unsubscribeFromCallEvents } = useCallStore();
+
     const { user } = useAuthStore(); // Check if user is logged in to subscribe
+    const { isGlobalLoading, isOffline, setOffline } = useUIStore();
 
     useEffect(() => {
         if (isLight) {
@@ -40,7 +45,7 @@ const App = () => {
 
     useEffect(() => {
         if (primaryColor) {
-             document.documentElement.style.setProperty("--primary-color", primaryColor);
+            document.documentElement.style.setProperty("--primary-color", primaryColor);
         }
     }, [primaryColor]);
 
@@ -54,27 +59,44 @@ const App = () => {
         };
     }, [user, subscribeToCallEvents, unsubscribeFromCallEvents]);
 
+    useEffect(() => {
+        const handleOnline = () => setOffline(false);
+        const handleOffline = () => setOffline(true);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [setOffline]);
+
     return (
         <>
-            <Toaster richColors/>
+            <Toaster richColors />
+
             <CallModal />
+
+
+
             <BrowserRouter>
                 <Routes>
                     {/* Public routes */}
-                    <Route path="/signin" element={<SignInPage/>}/>
-                    <Route path="/signup" element={<SignUpPage/>}/>
+                    <Route path="/signin" element={<SignInPage />} />
+                    <Route path="/signup" element={<SignUpPage />} />
 
 
-                    <Route element={<ProtectedRoute/>}>
+                    <Route element={<ProtectedRoute />}>
                         <Route path="/post/:postId" element={<SinglePostPage />} />
-                        <Route element={<ChatPage/>}>
-                            <Route path="/" element={<Navigate to="/feed" replace/>}/>
-                            <Route path="/chat" element={<ChatContainerWrapper />}/>
-                            <Route path="/feed" element={<PostsContainer />}/>
-                            <Route path="/feed/saved" element={<SavedPostsContainer />}/>
-                            <Route path="/feed/friends" element={<FriendsContainer />}/>
-                            <Route path="/feed/profile/:userId" element={<ProfileContainer />}/>
-                            <Route path="/video" element={<VideoFeed />}/>
+                        <Route element={<ChatPage />}>
+                            <Route path="/" element={<Navigate to="/feed" replace />} />
+                            <Route path="/chat" element={<ChatContainerWrapper />} />
+                            <Route path="/feed" element={<PostsContainer />} />
+                            <Route path="/feed/saved" element={<SavedPostsContainer />} />
+                            <Route path="/feed/friends" element={<FriendsContainer />} />
+                            <Route path="/feed/profile/:userId" element={<ProfileContainer />} />
+                            <Route path="/video" element={<VideoFeed />} />
                         </Route>
                     </Route>
                 </Routes>

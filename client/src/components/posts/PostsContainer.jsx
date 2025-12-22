@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/PostsContainer.module.scss';
 import { usePostStore } from '../../stores/usePostStore';
@@ -14,14 +14,35 @@ const PostsContainer = () => {
     const { posts, fetchPosts, createPost, likePost, addComment, deletePost, isLoading } = usePostStore();
     const { user } = useAuthStore();
     const { toggleSidebar } = useOutletContext();
-    
+
     // Create Post State
     const [newPostContent, setNewPostContent] = useState('');
-    const [newPostMedia, setNewPostMedia] = useState(null); 
-    
+    const [newPostMedia, setNewPostMedia] = useState(null);
+
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const observer = useRef(null);
+    const lastPostElementRef = React.useCallback(node => {
+        if (isLoading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [isLoading, hasMore]);
+
     useEffect(() => {
-        fetchPosts();
-    }, [fetchPosts]);
+        const loadPosts = async () => {
+            const newPosts = await fetchPosts(page);
+            if (newPosts && newPosts.length < 10) { // Limit is 10
+                setHasMore(false);
+            }
+        };
+        loadPosts();
+    }, [page, fetchPosts]);
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim() && !newPostMedia) return;
@@ -34,36 +55,64 @@ const PostsContainer = () => {
     return (
         <div className={cx('posts-container-wrapper')}>
             <div className={cx('header')}>
-                <button 
-                     className={cx('mobile-menu-btn')} 
-                     onClick={toggleSidebar}
+                <button
+                    className={cx('mobile-menu-btn')}
+                    onClick={toggleSidebar}
                 >
-                     <Menu size={24} />
+                    <Menu size={24} />
                 </button>
                 <h2>News Feed</h2>
             </div>
-            
+
             <div className={cx('content-area')}>
-                <CreatePost 
-                    user={user} 
-                    content={newPostContent} 
+                <CreatePost
+                    user={user}
+                    content={newPostContent}
                     setContent={setNewPostContent}
                     media={newPostMedia}
                     setMedia={setNewPostMedia}
                     onSubmit={handleCreatePost}
-                    isLoading={isLoading}
+                    isLoading={isLoading && page === 1} // Only show spinner on button if initial load? Or handle separate loading state
                 />
-                
-                {posts.map(post => (
-                    <PostItem 
-                        key={post._id} 
-                        post={post} 
-                        currentUser={user}
-                        onLike={likePost}
-                        onComment={addComment}
-                        onDelete={deletePost}
-                    />
-                ))}
+
+                {posts.map((post, index) => {
+                    if (posts.length === index + 1) {
+                        return (
+                            <div ref={lastPostElementRef} key={post._id}>
+                                <PostItem
+                                    post={post}
+                                    currentUser={user}
+                                    onLike={likePost}
+                                    onComment={addComment}
+                                    onDelete={deletePost}
+                                />
+                            </div>
+                        );
+                    } else {
+                        return (
+                            <PostItem
+                                key={post._id}
+                                post={post}
+                                currentUser={user}
+                                onLike={likePost}
+                                onComment={addComment}
+                                onDelete={deletePost}
+                            />
+                        );
+                    }
+                })}
+
+                {isLoading && page > 1 && (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: '#888' }}>
+                        Loading more...
+                    </div>
+                )}
+
+                {!hasMore && posts.length > 0 && (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: '#888' }}>
+                        You have reached the end of the feed.
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -82,69 +131,69 @@ const CreatePost = ({ user, content, setContent, media, setMedia, onSubmit, isLo
             setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
         }
     };
-    
+
     // Clear preview when media is reset
     useEffect(() => {
         if (!media) {
             setPreviewUrl(null);
             setMediaType(null);
-             if (fileInputRef.current) fileInputRef.current.value = "";
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     }, [media]);
 
     return (
         <div className={cx('create-post-card')}>
-            <textarea 
+            <textarea
                 placeholder={`What's on your mind, ${user?.displayName || 'User'}?`}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 disabled={isLoading}
             />
-            
+
             {previewUrl && (
-                <div style={{position: 'relative', marginBottom: '1rem'}}>
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
                     {mediaType === 'video' ? (
-                        <video 
-                            src={previewUrl} 
-                            controls 
-                            style={{maxWidth: '100%', borderRadius: '0.5rem', maxHeight: '300px'}} 
+                        <video
+                            src={previewUrl}
+                            controls
+                            style={{ maxWidth: '100%', borderRadius: '0.5rem', maxHeight: '300px' }}
                         />
                     ) : (
-                        <img 
-                            src={previewUrl} 
-                            alt="Preview" 
-                            style={{maxWidth: '100%', borderRadius: '0.5rem', maxHeight: '300px', objectFit: 'contain'}} 
+                        <img
+                            src={previewUrl}
+                            alt="Preview"
+                            style={{ maxWidth: '100%', borderRadius: '0.5rem', maxHeight: '300px', objectFit: 'contain' }}
                         />
                     )}
-                    
-                    <button 
+
+                    <button
                         onClick={() => setMedia(null)}
-                        style={{position: 'absolute', top: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', padding: '5px', cursor: 'pointer', opacity: isLoading ? 0.5 : 1}}
+                        style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', padding: '5px', cursor: 'pointer', opacity: isLoading ? 0.5 : 1 }}
                         disabled={isLoading}
                     >
                         X
                     </button>
                 </div>
             )}
-            
-            <input 
-                type="file" 
+
+            <input
+                type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept="image/*,video/*"
-                style={{display: 'none'}}
+                style={{ display: 'none' }}
                 disabled={isLoading}
             />
-            
+
             <div className={cx('actions')}>
-                <div 
-                    className={cx('upload-btn')} 
+                <div
+                    className={cx('upload-btn')}
                     onClick={() => !isLoading && fileInputRef.current?.click()}
-                    style={{opacity: isLoading ? 0.5 : 1, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'}}
+                    style={{ opacity: isLoading ? 0.5 : 1, cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                     <Image size={20} color="var(--primary-color)" />
                     <Video size={20} color="var(--primary-color)" />
-                    <span style={{fontSize: '1.4rem', color: '#666'}}>Photo/Video</span>
+                    <span style={{ fontSize: '1.4rem', color: '#666' }}>Photo/Video</span>
                 </div>
                 <button className={cx('post-btn')} onClick={onSubmit} disabled={isLoading || (!content.trim() && !media)}>
                     {isLoading ? 'Posting...' : 'Post'}

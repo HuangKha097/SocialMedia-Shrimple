@@ -90,10 +90,17 @@ export const useChatStore = create(
                 try {
                     await friendService.acceptRequest(requestId);
 
-
-                    set((state) => ({
-                        friendRequests: state.friendRequests.filter((req) => req._id !== requestId)
-                    }));
+                    set((state) => {
+                        // 1. Remove from friendRequests 
+                        const newRequests = state.friendRequests.filter((req) => req._id !== requestId);
+                        
+                        // 2. Optionally fetch friends to update list, or we could optimistic update if we had user data
+                        // For now, just firing fetchFriends in background is safe enough without reloading app
+                        get().fetchFriends(); 
+                        
+                        return { friendRequests: newRequests };
+                    });
+                    
                     return true;
                 } catch (error) {
                     console.error("Error accepting request:", error);

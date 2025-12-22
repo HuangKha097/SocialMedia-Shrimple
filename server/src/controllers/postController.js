@@ -58,6 +58,23 @@ const checkFakeNews = (text) => {
 export const createPost = async (req, res) => {
     try {
         const { content } = req.body;
+        const userId = req.user._id;
+
+        // Check for duplicate post within last 60 seconds
+        const thirtySecondsAgo = new Date(Date.now() - 60000);
+        const duplicate = await Post.findOne({
+            author: userId,
+            content: content,
+            createdAt: { $gte: thirtySecondsAgo }
+        });
+
+        if (duplicate) {
+             console.log("Duplicate post blocked for user", userId);
+             // If we already have this post, just return it instead of erroring, 
+             // to handle client retries gracefully, or return 409
+             return res.status(200).json(duplicate);
+        }
+
         let imageUrl = "";
         let videoUrl = "";
 
@@ -144,9 +161,15 @@ export const getAllPosts = async (req, res) => {
         // 2. Add current user to list (to see own posts)
         const allowedAuthors = [...friendIds, userId];
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         // 3. Find posts only from friends and self
         const posts = await Post.find({ author: { $in: allowedAuthors } })
             .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
             .populate("author", "username displayName avatarURL")
             .populate("comments.postedBy", "username displayName avatarURL");
 
@@ -221,7 +244,12 @@ export const likePost = async (req, res) => {
         }
 
         await post.save();
-        res.status(200).json(post);
+        
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(updatedPost);
     } catch (error) {
         console.error("Error in likePost controller: ", error.message);
         res.status(500).json({ message: "Internal Server Error" });

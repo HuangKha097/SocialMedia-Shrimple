@@ -10,7 +10,7 @@ export const authService = {
             lastName,
             gender,
             birthday
-        }, {withCredentials: true})
+        }, {withCredentials: true, globalLoading: true})
         return res.data;
     },
 
@@ -18,12 +18,12 @@ export const authService = {
         const res = await api.post("/api/auth/signin", {
             email,
             password
-        }, {withCredentials: true})
+        }, {withCredentials: true, globalLoading: true})
         return res.data; // accessToken
     },
 
     signOut: async () => {
-        return await api.post("/api/auth/signout", {withCredentials: true})
+        return await api.post("/api/auth/signout", {}, {withCredentials: true, globalLoading: true})
     },
 
     fetchMe: async () => {
@@ -42,6 +42,10 @@ export const authService = {
     },
     updateProfile: async (formData) => {
         const res = await api.put("/api/users/update-profile", formData);
+        return res.data;
+    },
+    changePassword: async (oldPassword, newPassword) => {
+        const res = await api.put("/api/auth/change-password", { oldPassword, newPassword }, {withCredentials: true, globalLoading: true});
         return res.data;
     }
 }
