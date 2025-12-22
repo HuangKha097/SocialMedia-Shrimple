@@ -183,6 +183,7 @@ export const getAllPosts = async (req, res) => {
 export const getVideoFeed = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
+        //limit video feed
         const limit = parseInt(req.query.limit) || 5; // Smaller chunks for videos
         const skip = (page - 1) * limit;
 
