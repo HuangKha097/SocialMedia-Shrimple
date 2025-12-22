@@ -48,12 +48,17 @@ const SlideBar = ({ onCloseSetting, onCloseSlideBar, onCloseAddFriendPopup, onCl
                         </div>
                     </div>
 
-                    <button className={cx("more-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18} /></button>
+                    <button className={cx("more-btn", "collapse-sidebar-btn")} onClick={onCloseSlideBar}><ChevronLeft size={18} /></button>
                 </div>
             </div>
             <div className={cx('profile')}>
                 <div className={cx('profile')}>
-                    <img src={user?.avatarURL || default_avt} alt="profile-pic" className={cx('profile-pic')}/>
+                    <img 
+                        src={user?.avatarURL ? (user.avatarURL.startsWith('http') ? user.avatarURL : `http://localhost:5001${user.avatarURL}`) : default_avt} 
+                        alt="profile-pic" 
+                        className={cx('profile-pic')}
+                        onError={(e) => {e.target.src = default_avt}}
+                    />
                     <div className={cx("info-wrapper")}>
                         <p className={cx('full-name')}>{user?.displayName}</p>
                         <p className={cx("username")}>{`@${user?.username}`}</p>

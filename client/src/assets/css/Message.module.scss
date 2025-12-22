@@ -17,6 +17,10 @@
     display: flex;
     flex-direction: column;
     max-width: 60%;
+    
+    @media (max-width: 768px) {
+        max-width: 80%; /* Wider on mobile */
+    }
   }
 
   // --- MỚI THÊM: Style cho tên người gửi ---
@@ -34,6 +38,7 @@
     background-color: var(--primary-blockBackgroundColor);
     padding: 1.2rem 1.6rem;
     border-radius: 1.2rem;
+    min-width: 0; /* Help flexbox handle overflow */
 
     .message-text {
       line-height: 2.6rem;
@@ -42,7 +47,9 @@
       color:  var(--primary-textColor);
       margin-bottom: 0.6rem;
       white-space: pre-wrap;
-      word-wrap: break-word;
+      word-wrap: break-word;       /* Legacy */
+      overflow-wrap: break-word;   /* Standard */
+      word-break: break-word;      /* Webkit */
     }
 
     .message-time {
@@ -123,7 +130,10 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       cursor: pointer;
       position: relative; // For tooltip positioning
-
+      .reaction-count{
+        color: white;
+        font-weight: bold;
+      }
       .reaction-tooltip {
           position: absolute;
           bottom: 120%; // Place above

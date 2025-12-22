@@ -25,11 +25,11 @@ const BlockedUsers = () => {
 
     const handleUnblock = async (userId) => {
         if (!confirm("Are you sure you want to unblock this user?")) return;
-        
+
         try {
             await userSettingsService.unblockUser(userId);
             setBlockedList(prev => prev.filter(u => u._id !== userId));
-            checkAuth(); 
+            checkAuth();
         } catch (error) {
             console.error("Failed to unblock user", error);
             alert("Failed to unblock user");
@@ -48,7 +48,7 @@ const BlockedUsers = () => {
                         {blockedList.map(u => (
                             <li key={u._id} className={cx('blocked-item')}>
                                 <div className={cx('info')}>
-                                    <img src={u.avatarUrl || "/favicon.png"} alt="avatar" />
+                                    <img src={u.avatarURL || "/favicon.png"} alt="avatar" />
                                     <span>{u.displayName || u.username}</span>
                                 </div>
                                 <button onClick={() => handleUnblock(u._id)} className={cx('unblock-btn')}>Unblock</button>

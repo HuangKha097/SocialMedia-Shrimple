@@ -96,7 +96,7 @@ const CreateGroupPopup = ({ onCloseCreateGroupPopup }) => {
                 <div className={cx('header')}>
                     <h3 className={cx('title')}>Create Group</h3>
                     <button className={cx('close-btn')} onClick={onCloseCreateGroupPopup}>
-                        <X size={24}/>
+                        <X size={24} />
                     </button>
                 </div>
 
@@ -149,7 +149,7 @@ const CreateGroupPopup = ({ onCloseCreateGroupPopup }) => {
                             <div className={cx('chips-wrapper')}>
                                 {selectedMembers.map(user => (
                                     <div key={user._id} className={cx('chip')}>
-                                        <img src={user.avatarUrl || default_avt} alt="" />
+                                        <img src={user.avatarURL || default_avt} alt="" />
                                         <span>{user.displayName || user.username}</span>
                                         <button onClick={() => toggleMember(user)}>
                                             <X size={14} />
@@ -183,7 +183,7 @@ const CreateGroupPopup = ({ onCloseCreateGroupPopup }) => {
                                 return (
                                     <div key={user._id} className={cx('user-item', { active: isSelected })}>
                                         <div className={cx('user-info')}>
-                                            <img src={user.avatarUrl || default_avt} alt="avatar" className={cx('avatar')} />
+                                            <img src={user.avatarURL || default_avt} alt="avatar" className={cx('avatar')} />
                                             <div className={cx('details')}>
                                                 <p className={cx('name')}>{user.displayName || user.username}</p>
                                                 <p className={cx('email')}>{user.email}</p>
@@ -210,7 +210,7 @@ const CreateGroupPopup = ({ onCloseCreateGroupPopup }) => {
                         className={cx('btn-create', { disabled: !canCreate })}
                         onClick={handleCreateGroup}
                     >
-                        {isCreatingGroup ? <Loader2 className={cx('spin')} size={20}/> : "Create Group"}
+                        {isCreatingGroup ? <Loader2 className={cx('spin')} size={20} /> : "Create Group"}
                     </button>
                 </div>
             </div>

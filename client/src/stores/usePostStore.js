@@ -23,7 +23,7 @@ export const usePostStore = create((set, get) => ({
     createPost: async (postData) => {
         set({ isLoading: true });
         try {
-            // Check if postData.image is a File object to determine if we need FormData
+
             let dataToSend = postData;
             let headers = {};
 

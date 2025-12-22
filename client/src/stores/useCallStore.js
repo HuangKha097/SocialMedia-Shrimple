@@ -72,7 +72,7 @@ export const useCallStore = create((set, get) => ({
              // We reuse callerInfo to store the person we are talking to
              // If we have full recipientInfo, use it for better UI (name, avatar)
              callerInfo: recipientInfo 
-                ? { id: recipientId, name: recipientInfo.displayName || recipientInfo.username, avatar: recipientInfo.avatarUrl } 
+                ? { id: recipientId, name: recipientInfo.displayName || recipientInfo.username, avatar: recipientInfo.avatarURL } 
                 : { id: recipientId, name: "User" } 
          });
     },

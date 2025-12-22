@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Friend from "../models/Friend.js";
 import Post from "../models/Post.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 
@@ -178,6 +179,16 @@ export const blockUser = async (req, res) => {
 
         user.blockedUsers.push(targetId);
         await user.save();
+        
+        // --- AUTO UNFRIEND ON BLOCK ---
+        // Find and delete friendship regardless of who is userA/userB
+        await Friend.findOneAndDelete({
+            $or:[
+                {userA: userId, userB: targetId},
+                {userA: targetId, userB: userId}
+            ]
+        });
+        // ------------------------------
         
         // Return full list or just success? Full list is nice for updates.
         // We can just return success for now or the list id.

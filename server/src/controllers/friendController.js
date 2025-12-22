@@ -65,11 +65,11 @@ export const acceptFriendRequest = async (req, res) => {
         })
         await FriendRequest.findByIdAndDelete(requestId)
         // khi co lean thi data tra ve la js thay vi mongoDocument => query se nhanh va nhe hon
-        const from = await User.findById(request.from).select('_id displayName avatarUrl').lean();
+        const from = await User.findById(request.from).select('_id displayName avatarURL').lean();
 
         return res.status(200).json({
             message: "Accept request successfully", newFriend: {
-                _id: from?._id, displayName: from?.displayName, avatarUrl: from?.avatarUrl,
+                _id: from?._id, displayName: from?.displayName, avatarURL: from?.avatarURL,
             }
         });
     } catch (err) {
@@ -147,8 +147,8 @@ export const getAllFriends = async (req, res) => {
                 userB: userId
             }]
         })
-            .populate('userA', "_id displayName avatarUrl ")
-            .populate('userB', "_id displayName avatarUrl ")
+            .populate('userA', "_id displayName avatarURL ")
+            .populate('userB', "_id displayName avatarURL ")
             .lean()
         if (!friendships.length > 0) {
             return res.status(200).json({friends: []})
@@ -166,7 +166,7 @@ export const getFriendRequests = async (req, res) => {
     try {
     const userId = req.user._id;
 
-    const populateFields = "_id username displayName avatarUrl ";
+    const populateFields = "_id username displayName avatarURL ";
 
     const [sent, received] = await Promise.all([
         FriendRequest.find({from: userId}).populate('to', populateFields),

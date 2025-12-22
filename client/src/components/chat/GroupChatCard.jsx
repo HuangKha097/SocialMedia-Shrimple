@@ -9,7 +9,7 @@ const cx = classNames.bind(styles);
 
 const GroupChatCard = ({ props }) => {
     // Lấy các hàm và state cần thiết từ Store
-    const { setActiveConversationId, activeConversationId, messages, fetchMessages } = useChatStore();
+    const { setActiveConversationId, activeConversationId, messages, fetchMessages, friends } = useChatStore();
 
     // 1. Phân tách dữ liệu
     const groupInfo = props?.group;
@@ -30,29 +30,52 @@ const GroupChatCard = ({ props }) => {
 
     // 3. Logic hiển thị Avatar Group
     const renderAvatar = () => {
+        const getAvatarSrc = (url) => {
+            if (!url) return default_avt;
+            if (url.startsWith('http') || url.startsWith('data:')) return url;
+            return `http://localhost:5001${url}`;
+        };
+
         if (groupInfo?.avatarURL) {
             return (
                 <img
-                    src={groupInfo.avatarURL}
+                    src={getAvatarSrc(groupInfo.avatarURL)}
                     alt="Group Avatar"
                     className={cx('avatar', 'single-avatar')}
+                    onError={(e) => { e.target.src = default_avt }}
                 />
             );
         }
 
         if (participants.length > 0) {
+            // Resolve avatars for the first 2 participants from Friends list if available
+            const resolveAvatar = (member) => {
+                if (!member) return null;
+                // Try to find in friends list
+                if (friends && friends.length > 0) {
+                    const friend = friends.find(f => f._id === member._id || f._id === member._id?.toString());
+                    if (friend && friend.avatarURL) return friend.avatarURL;
+                }
+                return member.avatarURL;
+            };
+
+            const firstAvatar = resolveAvatar(participants[0]);
+            const secondAvatar = participants.length > 1 ? resolveAvatar(participants[1]) : null;
+
             return (
                 <div className={cx('group-avatar-stack')}>
                     <img
-                        src={participants[0]?.avatarUrl || default_avt}
+                        src={getAvatarSrc(firstAvatar)}
                         alt="mem1"
                         className={cx('stack-avatar', 'first')}
+                        onError={(e) => { e.target.src = default_avt }}
                     />
                     {participants.length > 1 && (
                         <img
-                            src={participants[1]?.avatarUrl || default_avt}
+                            src={getAvatarSrc(secondAvatar)}
                             alt="mem2"
                             className={cx('stack-avatar', 'second')}
+                            onError={(e) => { e.target.src = default_avt }}
                         />
                     )}
                 </div>

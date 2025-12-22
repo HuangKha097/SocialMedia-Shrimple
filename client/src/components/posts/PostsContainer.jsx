@@ -3,7 +3,8 @@ import classNames from 'classnames/bind';
 import styles from '../../assets/css/PostsContainer.module.scss';
 import { usePostStore } from '../../stores/usePostStore';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { Image, Send, Heart, MessageCircle, Trash2, MoreHorizontal, Bookmark, EyeOff, Flag, Link as LinkIcon, Edit, Video } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
+import { Image, Send, Heart, MessageCircle, Trash2, MoreHorizontal, Bookmark, EyeOff, Flag, Link as LinkIcon, Edit, Video, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import PostItem from './PostItem';
 
@@ -12,6 +13,7 @@ const cx = classNames.bind(styles);
 const PostsContainer = () => {
     const { posts, fetchPosts, createPost, likePost, addComment, deletePost, isLoading } = usePostStore();
     const { user } = useAuthStore();
+    const { toggleSidebar } = useOutletContext();
     
     // Create Post State
     const [newPostContent, setNewPostContent] = useState('');
@@ -32,6 +34,12 @@ const PostsContainer = () => {
     return (
         <div className={cx('posts-container-wrapper')}>
             <div className={cx('header')}>
+                <button 
+                     className={cx('mobile-menu-btn')} 
+                     onClick={toggleSidebar}
+                >
+                     <Menu size={24} />
+                </button>
                 <h2>News Feed</h2>
             </div>
             

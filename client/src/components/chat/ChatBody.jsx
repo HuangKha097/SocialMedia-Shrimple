@@ -10,7 +10,7 @@ const cx = classNames.bind(styles);
 
 const ChatBody = () => {
     // Lấy thêm fetchMessages từ store
-    const { messages, activeConversationId, conversations, fetchMessages, reactToMessageAction } = useChatStore();
+    const { messages, activeConversationId, conversations, fetchMessages, reactToMessageAction, friends } = useChatStore();
     const { user: currentUser } = useAuthStore();
 
     const endOfMessagesRef = useRef(null);
@@ -22,7 +22,7 @@ const ChatBody = () => {
     const currentMessagesData = messages[activeConversationId];
     const messageList = currentMessagesData?.items || [];
     const hasMore = currentMessagesData?.hasMore;
-    
+
     // Ref cho container để tính toán scroll
     const containerRef = useRef(null);
     const prevScrollHeightRef = useRef(0);
@@ -40,31 +40,31 @@ const ChatBody = () => {
         // Chỉ cuộn xuống đáy nếu:
         // A. Lần đầu load (prevScrollHeightRef.current === 0)
         // B. Tin nhắn mới được thêm vào CUỐI (không phải load more từ nextCursor)
-        
+
         if (!containerRef.current) return;
 
         // Nếu chiều cao tăng lên và chúng ta KHÔNG đang ở trạng thái loading more (đơn giản hoá bằng cách xem scrollHeight)
         // Logic đơn giản: Nếu sender là mình hoặc đang ở gần đáy -> auto scroll
         // Nhưng phức tạp hơn là phân biệt "Load More" vs "New Message".
-        
+
         // Cách xử lý: 
         // Nếu fetch old messages -> Scroll height tăng, nhưng scrollTop phải giữ nguyên vị trí tương đối
         if (isFetchingRef.current) {
-             const newScrollHeight = containerRef.current.scrollHeight;
-             const diff = newScrollHeight - prevScrollHeightRef.current;
-             containerRef.current.scrollTop = diff; // Jump to previous relative position
-             isFetchingRef.current = false;
+            const newScrollHeight = containerRef.current.scrollHeight;
+            const diff = newScrollHeight - prevScrollHeightRef.current;
+            containerRef.current.scrollTop = diff; // Jump to previous relative position
+            isFetchingRef.current = false;
         } else {
-             // Default behaviour: Scroll to bottom for new messages or initial load
-             // (Optional: Check if user is already near bottom before forcing scroll)
-             endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+            // Default behaviour: Scroll to bottom for new messages or initial load
+            // (Optional: Check if user is already near bottom before forcing scroll)
+            endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
         }
-        
+
     }, [messageList]);
 
     const handleScroll = (e) => {
         const { scrollTop, scrollHeight } = e.target;
-        
+
         // Nếu cuộn lên đỉnh và còn tin nhắn cũ -> Load more
         if (scrollTop === 0 && hasMore) {
             isFetchingRef.current = true;
@@ -80,29 +80,42 @@ const ChatBody = () => {
     };
 
     // Hàm lấy thông tin người gửi
+    const getAvatarSrc = (url) => {
+        if (!url) return defaultAvatar;
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        return `http://localhost:5001${url}`;
+    };
+
     const getSenderInfo = (senderId) => {
         if (!currentConvo?.participants) return { name: "Unknown", avatar: defaultAvatar };
 
         // Tìm user trong mảng participants
-        const sender = currentConvo.participants.find(p => p._id === senderId);
+        let sender = currentConvo.participants.find(p => p._id === senderId);
+
+        // Enhance with friend data if available (store uses 'friends' from useChatStore)
+        if (sender && friends && friends.length > 0) {
+            const friend = friends.find(f => f._id === sender._id || f._id === sender._id?.toString());
+            if (friend) sender = { ...sender, ...friend };
+        }
+
         return {
             name: sender?.displayName || sender?.username || "Unknown User",
-            avatar: sender?.avatarUrl || defaultAvatar
+            avatar: getAvatarSrc(sender?.avatarURL)
         };
     };
 
     return (
-        <div 
-            className={cx('chat-body-wrapper')} 
+        <div
+            className={cx('chat-body-wrapper')}
             ref={containerRef}
             onScroll={handleScroll}
         >
 
             {/* Loading Indicator for older messages */}
             {hasMore && isFetchingRef.current && (
-                 <div style={{ textAlign: 'center', padding: '10px', color: '#888' }}>
+                <div style={{ textAlign: 'center', padding: '10px', color: '#888' }}>
                     Loading...
-                 </div>
+                </div>
             )}
 
             {/* Hiển thị thông báo nếu chưa có tin nhắn */}
@@ -129,7 +142,7 @@ const ChatBody = () => {
                     <Message
                         key={message._id || index}
                         senderName={isMe ? "Me" : senderInfo.name}
-                        avatar={isMe ? (currentUser?.avatarUrl || defaultAvatar) : senderInfo.avatar}
+                        avatar={isMe ? (getAvatarSrc(currentUser?.avatarURL)) : senderInfo.avatar}
                         text={message.content}
                         image={message.imgUrl}
                         isGroup={currentConvo?.isGroup}
@@ -140,7 +153,7 @@ const ChatBody = () => {
                     />
                 );
             })}
-             <div ref={endOfMessagesRef} /> 
+            <div ref={endOfMessagesRef} />
         </div>
     );
 };

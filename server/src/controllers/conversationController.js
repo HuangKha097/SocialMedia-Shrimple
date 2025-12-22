@@ -53,12 +53,12 @@ export const createConversation = async (req, res) => {
         }
 
         await conversation.populate([
-            {path: "participants.userId", select: "displayName avatarUrl"},
+            {path: "participants.userId", select: "displayName avatarURL"},
             {
-                path: 'seenBy', select: 'displayName avatarUrl'
+                path: 'seenBy', select: 'displayName avatarURL'
             },
             {
-                path: "lastMessage.senderId", select: "displayName avatarUrl"
+                path: "lastMessage.senderId", select: "displayName avatarURL"
             }
         ]);
         return res.status(201).json({conversation});
@@ -77,20 +77,20 @@ export const getConversation = async (req, res) => {
             .sort({lastMessageAt: -1, updatedAt: -1})
             .populate({
                 path: "participants.userId",
-                select: "displayName avatarUrl"
+                select: "displayName avatarURL"
         }).populate({
                 path: "lastMessage.senderId",
-                select: "displayName avatarUrl"
+                select: "displayName avatarURL"
             }).populate({
                 path: "seenBy",
-                select: "displayName avatarUrl"
+                select: "displayName avatarURL"
             })
 
         const formatted = conversations.map((convo) =>{
             const participants = (convo.participants || []).map((p)=>({
                 _id:p.userId?._id,
                 displayName:p.userId?.displayName,
-                avatarUrl:p.userId?.avatarUrl ?? null,
+                avatarURL:p.userId?.avatarURL ?? null,
                 joinedAt: p.joinedAt,
             }));
             return {

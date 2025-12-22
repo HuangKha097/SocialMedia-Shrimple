@@ -76,7 +76,7 @@ const Message = ({
 
     return (
         <div className={cx('message-wrapper', {me: isMe})}>
-            {!isMe && <img src={avatar} alt="avatar" className={cx('avatar')}/>}
+            {!isMe && <img src={avatar} alt="avatar" className={cx('avatar')} onError={(e) => {e.target.src = profilePic_test}}/>}
 
             <div className={cx('message-content')}>
 

@@ -20,7 +20,7 @@ const ChatContainer = ({onCloseChatInfo, isShowChatInfo}) => {
         if (idFromUrl && idFromUrl !== activeConversationId) {
              setActiveConversationId(idFromUrl);
         }
-    }, [searchParams, setActiveConversationId, activeConversationId]);
+    }, [searchParams, setActiveConversationId]);
 
     // 1. Lấy thêm `friends` từ store để tìm thông tin người bạn nếu là chat mới
 
@@ -86,7 +86,7 @@ const ChatContainer = ({onCloseChatInfo, isShowChatInfo}) => {
                 <div className={cx("block-right")}>
                     <div className={cx("chat-info-wrapper")}>
                         {/* ChatInfo cũng cần biết đang hiển thị info của ai */}
-                        <ChatInfo chat={selectedConvo}/>
+                        <ChatInfo chat={selectedConvo} onClose={onCloseChatInfo} />
                     </div>
                 </div>
             )}

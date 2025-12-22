@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { usePostStore } from '../stores/usePostStore';
 import styles from '../assets/css/VideoFeed.module.scss';
 import classNames from 'classnames/bind';
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Send, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Send, X, Menu, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import VideoUploadModal from '../components/posts/VideoUploadModal';
 import { toast } from 'sonner';
@@ -16,24 +16,7 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
     const navigate = useNavigate();
 
     const [showComments, setShowComments] = useState(false);
-    // Volume is now controlled by parent
-    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-    const volumeTimeoutRef = useRef(null);
-
-    const handleMouseEnterVolume = () => {
-        if (volumeTimeoutRef.current) {
-            clearTimeout(volumeTimeoutRef.current);
-            volumeTimeoutRef.current = null;
-        }
-        setShowVolumeSlider(true);
-    };
-
-    const handleMouseLeaveVolume = () => {
-        volumeTimeoutRef.current = setTimeout(() => {
-            setShowVolumeSlider(false);
-        }, 500); // 500ms delay to allow moving to slider
-    };
-
+    
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
@@ -44,8 +27,6 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
             // Should play
             const playVideo = async () => {
                 try {
-                    // Start from beginning if we just scrolled to it (optional logic, but safer for 'feed' feel)
-                    // video.currentTime = 0; 
                     await video.play();
                 } catch (err) {
                     console.log("Autoplay prevented:", err);
@@ -56,10 +37,9 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
 
         } else {
             video.pause();
-            video.currentTime = 0; // Reset time so it starts fresh when we come back
+            video.currentTime = 0; // Reset time
         }
         
-        // Update volume even if active state doesn't change
         if(video) video.volume = isMuted ? 0 : volume;
         
     }, [isActive, isMuted, volume]);
@@ -77,6 +57,15 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
     };
 
     const isLiked = post.likes && post.likes.includes(user?._id);
+
+    const handleVolumeWheel = (e) => {
+        e.stopPropagation();
+        const step = 0.05;
+        const currentVol = isMuted ? 0 : volume;
+        const delta = e.deltaY > 0 ? -step : step; 
+        const newVol = Math.min(Math.max(currentVol + delta, 0), 0.5);
+        onVolumeChange(newVol);
+    };
 
     return (
         <>
@@ -98,7 +87,7 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
                     className={cx('author-info')}
                     onClick={() => navigate(`/feed/profile/${post.author?._id}`)}
                 >
-                    <img src={post.author?.avatarURL || "/favicon.png"} alt="user" />
+                    <img src={post.author?.avatarURL ? (post.author.avatarURL.startsWith('http') ? post.author.avatarURL : `http://localhost:5001${post.author.avatarURL}`) : "/favicon.png"} alt="user" onError={(e) => {e.target.src = "/favicon.png"}} />
                     <span>{post.author?.displayName || post.author?.username}</span>
                 </div>
                 <p className={cx('content-text')}>{post.content}</p>
@@ -121,23 +110,20 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
 
                 <div 
                     className={cx('volume-control-wrapper')}
-                    onMouseEnter={handleMouseEnterVolume}
-                    onMouseLeave={handleMouseLeaveVolume}
                     onClick={(e) => e.stopPropagation()}
+                    onWheel={handleVolumeWheel}
                 >
-                    {showVolumeSlider && (
-                        <div className={cx('volume-slider-container')}>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="1" 
-                                step="0.1" 
-                                value={isMuted ? 0 : volume} 
-                                onChange={handleVolumeChange} 
-                                className={cx('vertical-slider')}
-                            />
-                        </div>
-                    )}
+                    <div className={cx('volume-slider-container')}>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="0.5" 
+                            step="0.05" 
+                            value={isMuted ? 0 : volume} 
+                            onChange={handleVolumeChange} 
+                            className={cx('vertical-slider')}
+                        />
+                    </div>
                     <button className={cx('action-btn')} onClick={(e) => { e.stopPropagation(); toggleMute(); }}>
                         {isMuted || volume === 0 ? <VolumeX color="white" /> : <Volume2 color="white" />}
                     </button>
@@ -154,6 +140,8 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
 
 const VideoFeed = () => {
     const { videoPosts, fetchVideoFeed, likePost } = usePostStore();
+    // Default to no-op function if context is missing (e.g. standalone test)
+    const { toggleSidebar, isSidebarOpen = true } = useOutletContext() || { toggleSidebar: () => {}, isSidebarOpen: true };
     const [activePostId, setActivePostId] = useState(() => {
         return sessionStorage.getItem('last_active_video_id') || null;
     });
@@ -262,6 +250,10 @@ const VideoFeed = () => {
     if (!videoPosts || videoPosts.length === 0) {
         return (
             <div className={cx('local-video-feed-container')} style={{color:'white', display:'flex', justifyContent:'center', alignItems:'center', flexDirection: 'column', gap: '1rem'}}>
+                <button className={cx('sidebar-toggle-btn')} onClick={toggleSidebar}>
+                    <Menu className={cx('icon-mobile')} size={24} />
+                    <ChevronLeft className={cx('icon-desktop')} size={24} />
+                </button>
                 <p>No videos available. Upload a video to get started!</p>
                 <button className={cx('floating-upload-btn', 'static-btn')} onClick={() => setIsUploadOpen(true)}>
                     Upload Video
@@ -273,6 +265,10 @@ const VideoFeed = () => {
 
     return (
         <div className={cx('feed-wrapper')}>
+            <button className={cx('sidebar-toggle-btn', { 'sidebar-closed': !isSidebarOpen })} onClick={toggleSidebar}>
+                 <Menu className={cx('icon-mobile')} size={24} />
+                 <ChevronLeft className={cx('icon-desktop')} size={24} />
+            </button>
             <div 
                 className={cx('local-video-feed-container')} 
                 onScroll={handleScroll}
@@ -334,7 +330,7 @@ const CommentsDrawer = ({ post, onClose }) => {
                     {post.comments && post.comments.length > 0 ? (
                         post.comments.map((comment, idx) => (
                             <div key={idx} className={cx('comment-item')}>
-                                <img src={comment.postedBy?.avatarURL || "/favicon.png"} alt="user" />
+                                <img src={comment.postedBy?.avatarURL ? (comment.postedBy.avatarURL.startsWith('http') ? comment.postedBy.avatarURL : `http://localhost:5001${comment.postedBy.avatarURL}`) : "/favicon.png"} alt="user" onError={(e) => {e.target.src = "/favicon.png"}} />
                                 <div className={cx('comment-content')}>
                                     <span className={cx('comment-user')}>{comment.postedBy?.displayName || 'User'}</span>
                                     <p>{comment.text}</p>

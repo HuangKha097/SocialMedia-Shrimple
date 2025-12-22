@@ -1,12 +1,13 @@
 import React from "react";
 import classNames from "classnames/bind";
 import styles from "../assets/css/SignInPage.module.scss";
-import {Link} from "react-router-dom";
-import {useForm} from "react-hook-form";
-import {z} from "zod";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {useAuthStore} from "../stores/useAuthStore.js";
-import {replace, useNavigate} from "react-router";
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { useAuthStore } from "../stores/useAuthStore.js";
+import { useNavigate } from "react-router";
 
 const cx = classNames.bind(styles);
 
@@ -23,7 +24,7 @@ const SignInPage = () => {
     const {
         register,
         handleSubmit,
-        formState: {errors, isSubmitting},
+        formState: { errors, isSubmitting },
     } = useForm({
         resolver: zodResolver(signInSchema),
         defaultValues: {
@@ -35,7 +36,7 @@ const SignInPage = () => {
 
 
     const onSubmit = async (data) => {
-        const {email, password} = data;
+        const { email, password } = data;
         try {
             const res = await signIn(email, password)
             res.success && navigate("/");
@@ -104,10 +105,18 @@ const SignInPage = () => {
                     <div className={cx("line")}>or</div>
 
                     {/* Social buttons */}
-                    <button className={cx("social-btn", "google")}>
+                    <button
+                        className={cx("social-btn", "google")}
+                        onClick={() => toast.info("Feature coming soon!")}
+                        type="button"
+                    >
                         <span>Continue with Google</span>
                     </button>
-                    <button className={cx("social-btn", "github")}>
+                    <button
+                        className={cx("social-btn", "github")}
+                        onClick={() => toast.info("Feature coming soon!")}
+                        type="button"
+                    >
                         <span>Continue with GitHub</span>
                     </button>
 
@@ -115,8 +124,8 @@ const SignInPage = () => {
                     <p>
                         Don’t have an account?{" "}
                         <span>
-              <Link to="/signup">Sign up</Link>
-            </span>
+                            <Link to="/signup">Sign up</Link>
+                        </span>
                     </p>
                 </div>
 

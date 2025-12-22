@@ -9,31 +9,44 @@ import { useNavigate } from "react-router-dom";
 const cx = classNames.bind(styles);
 
 const ChatCard = ({ props }) => {
-    const { setActiveConversationId, activeConversationId, messages, fetchMessages } = useChatStore();
-    const { user: currentUser, onlineUsers } = useAuthStore(); 
+    const { setActiveConversationId, activeConversationId, messages, fetchMessages, friends } = useChatStore();
+    const { user: currentUser, onlineUsers } = useAuthStore();
     const navigate = useNavigate();
 
     // 3. LOGIC TÌM NGƯỜI CHAT CÙNG (PARTNER)
     // Lọc ra người có _id KHÁC với _id của mình.
     // Nếu không tìm thấy (trường hợp chat với chính mình), lấy người đầu tiên.
-    const partner = props?.participants?.find(p => p._id !== currentUser?._id) || props?.participants?.[0];
-    
+    let partner = props?.participants?.find(p => p._id !== currentUser?._id) || props?.participants?.[0];
+
+    // START FIX: Enhance with friend data
+    if (partner && friends.length > 0) {
+        const friend = friends.find(f => f._id === partner._id || f._id === partner._id?.toString());
+        if (friend) {
+            partner = { ...partner, ...friend, ...partner }; // Keep partner status but fill with friend details? actually friend details should override if partner is scant
+            // Actually, usually friend object has better avatar/displayName. But let's prioritize prop if it's updated?
+            // No, the issue is prop is SCANT. So friend > partner (partial).
+            // EXCEPT: partner might have online status or something? No, user object usually static.
+            partner = { ...partner, ...friend };
+        }
+    }
+    // END FIX
+
     const isOnline = onlineUsers.includes(partner?._id);
-    
+
     // Correctly extract unread count for current user
     const getUnreadCount = () => {
-         if (!props.unreadCounts) return 0;
-         
-         // Assuming it's a map-like object { userId: count, ... }
-         // Handle both Map object and plain object
-         if (props.unreadCounts instanceof Map) {
-             return props.unreadCounts.get(currentUser?._id) || 0;
-         } else if (typeof props.unreadCounts === 'object') {
-             return props.unreadCounts[currentUser?._id] || 0;
-         }
-         
-         // Fallback if it's a number (legacy or incorrect state)
-         return typeof props.unreadCounts === 'number' ? props.unreadCounts : 0;
+        if (!props.unreadCounts) return 0;
+
+        // Assuming it's a map-like object { userId: count, ... }
+        // Handle both Map object and plain object
+        if (props.unreadCounts instanceof Map) {
+            return props.unreadCounts.get(currentUser?._id) || 0;
+        } else if (typeof props.unreadCounts === 'object') {
+            return props.unreadCounts[currentUser?._id] || 0;
+        }
+
+        // Fallback if it's a number (legacy or incorrect state)
+        return typeof props.unreadCounts === 'number' ? props.unreadCounts : 0;
     };
 
     const unreadCount = getUnreadCount();
@@ -74,9 +87,10 @@ const ChatCard = ({ props }) => {
             <div className={cx('avatar-wrapper')}>
                 {/* 4. Dùng avatar của partner đã tìm được */}
                 <img
-                    src={partner?.avatarUrl || default_avt}
+                    src={partner?.avatarURL ? (partner.avatarURL.startsWith('http') ? partner.avatarURL : `http://localhost:5001${partner.avatarURL}`) : default_avt}
                     alt="avatar"
                     className={cx('avatar')}
+                    onError={(e) => { e.target.src = default_avt }}
                 />
 
                 {isOnline && <div className={cx("status", "online")}></div>}

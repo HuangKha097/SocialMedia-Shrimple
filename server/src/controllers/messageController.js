@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
+import User from "../models/User.js";
 import {upDateConversationAfterCreateMessage} from "../utils/messageHelper.js";
 import { getReceiverSocketId, io } from "../socket/socket.js";
 
@@ -8,6 +9,29 @@ export const sendDirectMessage = async (req, res) => {
     try {
         const {recipientId, content, conversationId, image, file, type} = req.body;
         const senderId = req.user._id;
+
+        // --- CHECK BLOCK STATUS ---
+        // 1. Check if recipient has blocked sender (Can't send)
+        // 2. Check if sender has blocked recipient (Shouldn't happen via UI but good to block API)
+        const [recipient, sender] = await Promise.all([
+            User.findById(recipientId).select('blockedUsers'),
+            User.findById(senderId).select('blockedUsers')
+        ]);
+
+        if (!recipient) {
+             return res.status(404).json({ message: "Recipient not found" });
+        }
+
+        const isSenderBlockedByRecipient = recipient.blockedUsers.includes(senderId);
+        if (isSenderBlockedByRecipient) {
+            return res.status(403).json({ message: "You cannot send messages to this user." });
+        }
+
+        const isRecipientBlockedBySender = sender.blockedUsers.includes(recipientId);
+        if (isRecipientBlockedBySender) {
+            return res.status(400).json({ message: "You have blocked this user. Unblock to send messages." });
+        }
+        // ---------------------------
 
         let conversation;
 

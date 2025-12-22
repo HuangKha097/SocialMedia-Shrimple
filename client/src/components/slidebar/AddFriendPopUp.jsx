@@ -45,7 +45,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
         try {
             const data = await friendService.findUserByUsername(keyword);
             // Lọc bỏ chính mình khỏi kết quả tìm kiếm
-            setSearchResults(data.filter((item) => item._id !== currentUser._id ));
+            setSearchResults(data.filter((item) => item._id !== currentUser._id));
         } catch (error) {
             console.error(error);
             toast.error("Lỗi tìm kiếm");
@@ -81,7 +81,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
             <div className={cx('header')}>
                 <h3 className={cx('title')}>Add Friend</h3>
                 <button className={cx('close-btn')} onClick={onCloseAddFriendPopup}>
-                    <X size={24}/>
+                    <X size={24} />
                 </button>
             </div>
 
@@ -95,7 +95,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
                 />
                 <button type="submit" className={cx('search-btn')} disabled={isLoadingSearch}>
                     {/* Giữ Loader2 ở đây vì nút nhỏ, LoadingSpin có padding lớn */}
-                    {isLoadingSearch ? <Loader2 className={cx('btn-spinner')} size={20} /> : <Search size={20}/>}
+                    {isLoadingSearch ? <Loader2 className={cx('btn-spinner')} size={20} /> : <Search size={20} />}
                 </button>
             </form>
 
@@ -125,7 +125,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
                     return (
                         <div key={user._id} className={cx('user-item')}>
                             <div className={cx('user-info')}>
-                                <img src={user.avatarUrl || default_avt} alt="avatar" className={cx('avatar')} />
+                                <img src={user.avatarURL || default_avt} alt="avatar" className={cx('avatar')} />
                                 <div className={cx('details')}>
                                     <p className={cx('name')}>{user.displayName || user.username}</p>
                                     <p className={cx('email')}>{user.email}</p>
@@ -154,7 +154,7 @@ const AddFriendPopUp = ({ onCloseAddFriendPopup }) => {
                                     </>
                                 ) : (
                                     <>
-                                        <UserPlus size={18}/>
+                                        <UserPlus size={18} />
                                         <span>Add</span>
                                     </>
                                 )}

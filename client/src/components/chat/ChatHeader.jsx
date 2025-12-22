@@ -2,19 +2,21 @@ import React, { useMemo } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatHeader.module.scss';
 import defaultAvatar from "../../../public/favicon.png";
-import { Info, Phone, Video } from 'lucide-react';
+import { Info, Phone, Video, ChevronLeft, MoreVertical } from 'lucide-react';
 import { useAuthStore } from "../../stores/useAuthStore.js";
 import { useChatStore } from "../../stores/useChatStore.js";
 import { useCallStore } from '../../stores/useCallStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
 const ChatHeader = ({ onCloseChatInfo, chat }) => {
     const { user: currentUser, onlineUsers } = useAuthStore();
-    const { friends } = useChatStore();
+    const { friends, setActiveConversationId } = useChatStore();
     const { initiateCall } = useCallStore();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [showMenu, setShowMenu] = React.useState(false);
 
     if (!chat) return null;
 
@@ -28,41 +30,52 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
     const participants = chat.participants || [];
     const groupInfo = chat.group;
 
+    // Resolve Partner (for 1-1)
+    let partner = !isGroup ? (participants.find(p => p._id !== currentUser?._id) || participants[0]) : null;
+
+    // START FIX: Enhance with friend data
+    if (partner && friends.length > 0) {
+        const friend = friends.find(f => f._id === partner._id || f._id === partner._id?.toString());
+        if (friend) {
+            partner = { ...partner, ...friend };
+        }
+    }
+    // END FIX
+
     if (isGroup) {
         // Group: Tên nhóm
         displayName = chat.name || groupInfo?.name || "Unnamed Group";
         statusText = `${participants.length} members`;
-    } else {
-        // 1-1: Tìm người chat cùng
-        const partner = participants.find(p => p._id !== currentUser?._id) || participants[0];
-        if (partner) {
-            displayName = partner.displayName || partner.username || "User";
-            isOnline = onlineUsers.includes(partner._id);
-            statusText = isOnline ? "Active now" : "Offline";
-            partnerId = partner._id;
-        }
+    } else if (partner) {
+        displayName = partner.displayName || partner.username || "User";
+        isOnline = onlineUsers.includes(partner._id);
+        statusText = isOnline ? "Active now" : "Offline";
+        partnerId = partner._id;
     }
 
     // --- CHECK FRIENDSHIP FOR CALLS ---
     const isAllowedToCall = useMemo(() => {
-        if (isGroup) return true; 
-
-        const partner = participants.find(p => p._id !== currentUser?._id);
+        if (isGroup) return true;
         if (!partner) return false;
-
         return friends.some(f => f._id.toString() === partner._id.toString());
-    }, [isGroup, participants, currentUser, friends]);
+    }, [isGroup, partner, friends]);
 
 
     // --- 2. HÀM RENDER AVATAR ---
     const renderAvatar = () => {
+        const getAvatarSrc = (url) => {
+            if (!url) return defaultAvatar;
+            if (url.startsWith('http') || url.startsWith('data:')) return url;
+            return `http://localhost:5001${url}`;
+        };
+
         // A. Nếu là Group
         if (isGroup) {
             // A1. Có ảnh đại diện nhóm -> Hiện 1 ảnh
-            if (chat.avatarUrl || groupInfo?.avatarURL) {
+            if (chat.avatarURL || groupInfo?.avatarURL) {
                 return (
                     <img
-                        src={chat.avatarUrl || groupInfo?.avatarURL}
+                        src={getAvatarSrc(chat.avatarURL || groupInfo?.avatarURL)}
                         alt="Group Avatar"
                         className={cx("profile-pic", "single-avatar")}
                         onError={(e) => { e.target.src = defaultAvatar }}
@@ -74,15 +87,17 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
                 return (
                     <div className={cx('group-avatar-stack')}>
                         <img
-                            src={participants[0]?.avatarUrl || defaultAvatar}
+                            src={getAvatarSrc(participants[0]?.avatarURL)}
                             alt="mem1"
                             className={cx('stack-avatar', 'first')}
+                            onError={(e) => { e.target.src = defaultAvatar }}
                         />
                         {participants.length > 1 && (
                             <img
-                                src={participants[1]?.avatarUrl || defaultAvatar}
+                                src={getAvatarSrc(participants[1]?.avatarURL)}
                                 alt="mem2"
                                 className={cx('stack-avatar', 'second')}
+                                onError={(e) => { e.target.src = defaultAvatar }}
                             />
                         )}
                     </div>
@@ -91,15 +106,12 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
         }
 
         // B. Nếu là 1-1
-        let singleAvatarUrl = defaultAvatar;
-        if (!isGroup) {
-            const partner = participants.find(p => p._id !== currentUser?._id) || participants[0];
-            singleAvatarUrl = partner?.avatarUrl || defaultAvatar;
-        }
+        // Use the resolved partner (merged with friend data)
+        const singleAvatarUrl = partner?.avatarURL;
 
         return (
             <img
-                src={singleAvatarUrl}
+                src={getAvatarSrc(singleAvatarUrl)}
                 alt="avatar"
                 className={cx("profile-pic")}
                 onError={(e) => { e.target.src = defaultAvatar }}
@@ -108,16 +120,11 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
     };
 
     const handleCall = (video) => {
-        // Find partner ID again if needed or use partnerId calculated above
-        const partnerToCall = !isGroup 
-            ? participants.find(p => p._id !== currentUser?._id) 
-            : null;
-
-        if (partnerToCall) {
-            initiateCall(partnerToCall._id, video, partnerToCall);
+        if (partner) {
+            initiateCall(partner._id, video, partner);
         } else if (partnerId) {
-             // Fallback to partnerId calculated in render checks
-             initiateCall(partnerId, video, { _id: partnerId, displayName: displayName });
+            // Fallback
+            initiateCall(partnerId, video, { _id: partnerId, displayName: displayName });
         }
     };
 
@@ -129,7 +136,19 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
 
     return (
         <div className={cx('header-wrapper')}>
-            <div className={cx('user-info')} onClick={handleProfileClick} style={{cursor: !isGroup ? 'pointer' : 'default'}}>
+            <button
+                type="button"
+                className={cx('mobile-back-btn')}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveConversationId(null);
+                    // Clear search params to prevent refresh from re-opening chat
+                    navigate(location.pathname, { replace: true });
+                }}
+            >
+                <ChevronLeft size={30} />
+            </button>
+            <div className={cx('user-info')} onClick={handleProfileClick} style={{ cursor: !isGroup ? 'pointer' : 'default' }}>
                 <div className={cx('avatar-container')}>
                     {renderAvatar()}
                 </div>
@@ -142,25 +161,43 @@ const ChatHeader = ({ onCloseChatInfo, chat }) => {
                     </span>
                 </div>
             </div>
-            
+
             <div className={cx('action-buttons')}>
-                <button 
-                    className={cx('btn')} 
+                <button
+                    className={cx('btn')}
                     disabled={!isAllowedToCall}
                     title={!isAllowedToCall ? "You are not friends" : "Voice Call"}
-                    onClick={() => handleCall(false)}
+                    onClick={() => alert('Coming soon!')}
                 >
-                    <Phone size={16} />
+                    <Phone size={20} />
                 </button>
-                <button 
-                    className={cx('btn')} 
+                <button
+                    className={cx('btn')}
                     disabled={!isAllowedToCall}
                     title={!isAllowedToCall ? "You are not friends" : "Video Call"}
-                    onClick={() => handleCall(true)}
+                    onClick={() => alert('Coming soon!')}
                 >
-                    <Video size={16} />
+                    <Video size={20} />
                 </button>
-                <button className={cx('btn')} onClick={onCloseChatInfo}><Info size={16} /></button>
+
+                <div className={cx('more-menu-container')}>
+                    <button
+                        className={cx('btn', { active: showMenu })}
+                        onClick={() => setShowMenu(!showMenu)}
+                    >
+                        <MoreVertical size={20} />
+                    </button>
+
+                    {showMenu && (
+                        <div className={cx('dropdown-menu')}>
+                            <button className={cx('menu-item')} onClick={() => { onCloseChatInfo(); setShowMenu(false); }}>
+                                <Info size={18} />
+                                <span>Chat Info</span>
+                            </button>
+                            {/* Add more items here like Search, Mute, Block etc. */}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

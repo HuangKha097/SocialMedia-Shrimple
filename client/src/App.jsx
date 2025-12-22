@@ -64,7 +64,7 @@ const App = () => {
                     <Route path="/signin" element={<SignInPage/>}/>
                     <Route path="/signup" element={<SignUpPage/>}/>
 
-                    {/* Protected routes */}
+
                     <Route element={<ProtectedRoute/>}>
                         <Route path="/post/:postId" element={<SinglePostPage />} />
                         <Route element={<ChatPage/>}>

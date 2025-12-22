@@ -21,9 +21,10 @@ const FriendRequestCard = ({ request, onAccept, onDecline, isProcessing }) => {
             {/* Avatar */}
             <div className={cx('avatar-section')}>
                 <img
-                    src={from?.avatarUrl || default_avt}
+                    src={from?.avatarURL ? (from.avatarURL.startsWith('http') ? from.avatarURL : `http://localhost:5001${from.avatarURL}`) : default_avt}
                     alt="avatar"
                     className={cx('avatar')}
+                    onError={(e) => { e.target.src = default_avt }}
                 />
             </div>
 
@@ -41,7 +42,7 @@ const FriendRequestCard = ({ request, onAccept, onDecline, isProcessing }) => {
                     disabled={isProcessing}
                     title="Chấp nhận"
                 >
-                    {isProcessing ? <Loader2 className={cx('spinner')} size={18}/> : <Check size={18} />}
+                    {isProcessing ? <Loader2 className={cx('spinner')} size={18} /> : <Check size={18} />}
                 </button>
 
                 <button

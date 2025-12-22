@@ -1,14 +1,45 @@
 // ChatInfo.module.scss
 
 // Header Title
-.title {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: var(--primary-textColor);
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--primary-borderColor, rgba(128, 128, 128, 0.2));
-  flex-shrink: 0;
+.header-row {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 2rem;
+     padding-bottom: 1.5rem;
+     border-bottom: 1px solid var(--primary-borderColor, rgba(128, 128, 128, 0.2));
+     flex-shrink: 0;
+
+     .title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--primary-textColor);
+        margin: 0;
+        padding: 0;
+        border: none;
+     }
+
+     .close-btn {
+         background: transparent;
+         border: none;
+         color: var(--primary-textColor);
+         cursor: pointer;
+         padding: 0.5rem;
+         border-radius: 50%;
+         display: flex; /* Always show close btn, useful on desktop too */
+         align-items: center;
+         justify-content: center;
+         transition: background-color 0.2s;
+
+         &:hover {
+             background-color: var(--primary-hoverBackgroundColor);
+         }
+         
+         @media (min-width: 769px) {
+              /* Optional: Hide on desktop if we prefer toggle? NO, having X is good UX */
+              /* opacity: 0.5; */
+         }
+     }
 }
 
 // 1. PROFILE SECTION (User Info / Group Info)

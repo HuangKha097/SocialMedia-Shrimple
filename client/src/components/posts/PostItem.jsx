@@ -4,6 +4,8 @@ import styles from '../../assets/css/PostsContainer.module.scss'; // Reusing sty
 import { usePostStore } from '../../stores/usePostStore';
 import { Heart, MessageCircle, Trash2, MoreHorizontal, Bookmark, EyeOff, Flag, Link as LinkIcon, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import default_avt from "../../../public/favicon.png";
 
 const cx = classNames.bind(styles);
 
@@ -13,6 +15,7 @@ const PostItem = ({ post, currentUser, onLike, onComment, onDelete }) => {
     const [showComments, setShowComments] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const optionsRef = useRef(null);
+    const navigate = useNavigate();
     
     // Close options menu when clicking outside
     useEffect(() => {
@@ -69,11 +72,23 @@ const PostItem = ({ post, currentUser, onLike, onComment, onDelete }) => {
          setShowOptions(false);
     };
 
+    const handleUserClick = (userId) => {
+        if (userId) {
+            navigate(`/feed/profile/${userId}`);
+        }
+    };
+
     return (
         <div className={cx('post-item')}>
             <div className={cx('post-header')}>
-                <img src={post.author?.avatarURL || '/favicon.png'} alt="avatar" />
-                <div className={cx('user-info')}>
+                <img 
+                    src={post.author?.avatarURL ? (post.author.avatarURL.startsWith('http') ? post.author.avatarURL : `http://localhost:5001${post.author.avatarURL}`) : default_avt} 
+                    alt="avatar" 
+                    onClick={() => handleUserClick(post.author?._id)}
+                    style={{cursor: 'pointer'}}
+                    onError={(e) => {e.target.src = default_avt}}
+                />
+                <div className={cx('user-info')} onClick={() => handleUserClick(post.author?._id)} style={{cursor: 'pointer'}}>
                     <h4>{post.author?.displayName || post.author?.username}</h4>
                     <span>{new Date(post.createdAt).toLocaleString()}</span>
                 </div>
@@ -169,8 +184,30 @@ const PostItem = ({ post, currentUser, onLike, onComment, onDelete }) => {
                      <div className={cx('comment-list')}>
                          {post.comments.map((comment, index) => (
                              <div key={index} className={cx('comment')}>
-                                 <strong>{comment.postedBy?.displayName || 'User'}:</strong>
-                                 <span>{comment.text}</span>
+                                 <img 
+                                    src={comment.postedBy?.avatarURL ? (comment.postedBy.avatarURL.startsWith('http') ? comment.postedBy.avatarURL : `http://localhost:5001${comment.postedBy.avatarURL}`) : default_avt} 
+                                    alt="avt"
+                                    className={cx('comment-avatar')}
+                                    onClick={() => handleUserClick(comment.postedBy?._id)}
+                                    onError={(e) => {e.target.src = default_avt}}
+                                    style={{
+                                        width: '32px', 
+                                        height: '32px', 
+                                        borderRadius: '50%', 
+                                        objectFit: 'cover', 
+                                        marginRight: '10px',
+                                        cursor: 'pointer'
+                                    }}
+                                 />
+                                 <div className={cx('comment-content')}>
+                                    <strong 
+                                        onClick={() => handleUserClick(comment.postedBy?._id)} 
+                                        style={{cursor: 'pointer'}}
+                                    >
+                                        {comment.postedBy?.displayName || 'User'}
+                                    </strong>
+                                    <span style={{marginLeft: '5px'}}>{comment.text}</span>
+                                 </div>
                              </div>
                          ))}
                      </div>

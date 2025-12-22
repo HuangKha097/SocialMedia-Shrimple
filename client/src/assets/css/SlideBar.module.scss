@@ -87,6 +87,12 @@
             color: var(--primary-color);
             background-color: rgba(var(--primary-rgb), 0.1);
         }
+        
+        &.collapse-sidebar-btn {
+            @media (max-width: 768px) {
+                display: none;
+            }
+        }
       }
     }
 

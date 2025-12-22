@@ -1,19 +1,21 @@
 import React, { useState, useMemo, useRef } from 'react';
 import classNames from 'classnames/bind';
 import styles from '../../assets/css/ChatInput.module.scss';
-import { Paperclip, Send, Smile, Mic, MapPin, X, Image as ImageIcon } from 'lucide-react';
+import { Paperclip, Send, Smile, Mic, MapPin, X, Image as ImageIcon, Plus, Camera, File } from 'lucide-react';
 import { useChatStore } from "../../stores/useChatStore.js";
 import { useAuthStore } from "../../stores/useAuthStore.js";
 import EmojiPicker from 'emoji-picker-react';
+import { toast } from 'sonner';
 
 const cx = classNames.bind(styles);
 
 const ChatInput = () => {
     const [text, setText] = useState("");
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [image, setImage] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    
+
     const fileInputRef = useRef(null);
 
     const { sendDirectMessage, sendGroupMessage, activeConversationId, conversations, friends } = useChatStore();
@@ -23,10 +25,10 @@ const ChatInput = () => {
     const chatStatus = useMemo(() => {
         const currentConvo = conversations.find(c => c._id === activeConversationId);
         if (!activeConversationId) return { allowed: false, reason: "No selection" };
-        
+
         const isTemp = activeConversationId.toString().startsWith('temp_');
         const isGroup = currentConvo?.isGroup && !isTemp;
-        
+
         if (isGroup) return { allowed: true, reason: "" };
 
         let partnerId = null;
@@ -38,10 +40,10 @@ const ChatInput = () => {
         }
 
         if (!partnerId) return { allowed: false, reason: "User not found" };
-        
+
         // Check if I blocked them
         if (currentUser.blockedUsers && currentUser.blockedUsers.includes(partnerId)) {
-             return { allowed: false, reason: "You have blocked this user" };
+            return { allowed: false, reason: "You have blocked this user" };
         }
 
         // Check friendship
@@ -49,7 +51,7 @@ const ChatInput = () => {
         if (!isFriend) {
             return { allowed: false, reason: "You are not friends with this user" };
         }
-        
+
         return { allowed: true, reason: "" };
 
     }, [activeConversationId, conversations, friends, currentUser]);
@@ -67,8 +69,8 @@ const ChatInput = () => {
 
         const reader = new FileReader();
         reader.onloadend = () => {
-             setPreviewUrl(reader.result);
-             setImage(file);
+            setPreviewUrl(reader.result);
+            setImage(file);
         };
         reader.readAsDataURL(file);
     };
@@ -90,9 +92,9 @@ const ChatInput = () => {
 
         const currentConvo = conversations.find(c => c._id === activeConversationId);
         const isGroup = currentConvo?.isGroup && !activeConversationId.toString().startsWith('temp_');
-        
+
         // Use previewUrl as base64 image data for simple handling
-        const imageToSend = previewUrl; 
+        const imageToSend = previewUrl;
 
         try {
             if (isGroup) {
@@ -107,16 +109,17 @@ const ChatInput = () => {
                 }
 
                 if (recipientId) {
-                   const convoIdToSend = activeConversationId.toString().startsWith('temp_') ? null : activeConversationId;
-                   await sendDirectMessage(recipientId, text, convoIdToSend, imageToSend, null, 'text'); 
+                    const convoIdToSend = activeConversationId.toString().startsWith('temp_') ? null : activeConversationId;
+                    await sendDirectMessage(recipientId, text, convoIdToSend, imageToSend, null, 'text');
                 }
             }
             // Reset state
-            setText(""); 
+            setText("");
             removeImage();
             setShowEmojiPicker(false);
         } catch (error) {
             console.error("Failed to send message:", error);
+            toast.error(error.response?.data?.message || "Failed to send message");
         }
     };
 
@@ -159,54 +162,73 @@ const ChatInput = () => {
             )}
 
             <div className={cx('input-wrapper')}>
-                <div className={cx('btn-group')}>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{ display: 'none' }} 
-                        accept="image/*"
-                        onChange={handleFileChange} 
-                    />
-                    <button 
-                        className={cx('btn', 'attach-btn')}
-                        onClick={() => fileInputRef.current?.click()}
+                <div className={cx('left-actions')}>
+                    <button
+                        className={cx('btn', 'more-btn', { active: showActionsMenu })}
+                        onClick={() => setShowActionsMenu(!showActionsMenu)}
                     >
-                        <ImageIcon size={20}/>
+                        <Plus size={22} style={{ transform: showActionsMenu ? 'rotate(45deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
                     </button>
-                    <button 
+
+                    <div className={cx('actions-menu', { show: showActionsMenu })}>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                            accept="image/*"
+                            onChange={handleFileChange}
+                        />
+                        <button
+                            className={cx('btn', 'action-item')}
+                            onClick={() => { fileInputRef.current?.click(); setShowActionsMenu(false); }}
+                            title="Photo/Video"
+                        >
+                            <ImageIcon size={20} />
+                        </button>
+                        <button className={cx('btn', 'action-item')} title="Camera">
+                            <Camera size={20} />
+                        </button>
+                        <button className={cx('btn', 'action-item')} title="File">
+                            <File size={20} />
+                        </button>
+                        <button className={cx('btn', 'action-item')} title="Location">
+                            <MapPin size={20} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className={cx('input-field-container')}>
+                    <input
+                        type="text"
+                        placeholder="Type a message..."
+                        className={cx('text-input')}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => { setShowEmojiPicker(false); setShowActionsMenu(false); }}
+                    />
+                    <button
                         className={cx('btn', 'emoji-btn')}
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
-                        <Smile size={20}/>
+                        <Smile size={20} />
                     </button>
-                    {/* Placeholder for Map/Location */}
-                    <button className={cx('btn', 'map-btn')}><MapPin size={20}/></button>
                 </div>
-
-                <input
-                    type="text"
-                    placeholder="Type a message..."
-                    className={cx('text-input')}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => setShowEmojiPicker(false)} 
-                />
 
                 <div className={cx("btn-group")}>
                     {/* Placeholder for Mic */}
-                    <button 
-                    className={cx('btn', 'mic-btn')}
-                    onClick={() => alert("Voice messaging coming soon!")}
-                >
-                    <Mic size={20}/>
-                </button>
+                    <button
+                        className={cx('btn', 'mic-btn')}
+                        onClick={() => alert("Voice messaging coming soon!")}
+                    >
+                        <Mic size={20} />
+                    </button>
                     <button
                         className={cx('btn', 'send-btn')}
                         onClick={handleSendMessage}
                         disabled={!text.trim() && !image}
                     >
-                        <Send size={20}/>
+                        <Send size={20} />
                     </button>
                 </div>
             </div>

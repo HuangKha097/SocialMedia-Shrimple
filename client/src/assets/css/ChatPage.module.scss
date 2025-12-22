@@ -136,3 +136,116 @@
     opacity: 1;
   }
 }
+
+.mobile-backdrop {
+    display: none;
+}
+
+/* MEDIA QUERIES FOR MOBILE */
+@media (max-width: 768px) {
+  .container {
+     padding: 0;
+     width: 100vw;
+     height: 100vh;
+     overflow: hidden; /* Prevent scrolling on body */
+  }
+
+  /* Force wrapper to fill screen */
+  .chat-wrapper {
+      width: 100% !important;
+      height: 100% !important;
+      border: none;
+      border-radius: 0;
+      overflow: hidden; /* Ensure internal scrolling works */
+      
+      /* CHAT VIEW LOGIC */
+      
+      /* Default (List View): Show Sidebar, Hide Content */
+      &:not(.feed-view) {
+          .block-left {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            flex: 1;
+            border-right: none;
+          }
+
+          .block-right {
+            display: none;
+            width: 100%;
+            flex: 1;
+          }
+      }
+
+      /* Active Chat (Content View): Hide Sidebar, Show Content */
+      &.has-active-chat:not(.feed-view) {
+           .block-left {
+               display: none;
+           }
+           .block-right {
+               display: flex;
+           }
+      }
+
+      /* FEED VIEW LOGIC */
+      &.feed-view {
+           position: relative; 
+
+           .block-right {
+               display: flex;
+               width: 100%;
+               flex: 1;
+           }
+
+           /* Sidebar as Drawer */
+           .block-left {
+               position: absolute;
+               top: 0;
+               left: 0;
+               height: 100%;
+               width: 85%;
+               max-width: 320px;
+               z-index: 1001;
+               background-color: var(--primary-blockBackgroundColor); 
+               box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+               transition: transform 0.3s ease;
+               
+               /* If it is rendered (isShowSlideBar=true), it shows. */
+               /* We might want to animate enter/exit, but React AnimatePresence handles opacity/x. */
+               /* Ensure it overlays */
+           }
+           
+           .no-slide-bar {
+               display: none; /* Hide the collapse stub on mobile */
+           }
+      }
+  }
+  
+
+  .mobile-backdrop {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      z-index: 1000;
+      backdrop-filter: blur(3px);
+      animation: fadeIn 0.2s ease-out;
+  }
+}
+ 
+/* Override setting wrapper for mobile specifically if needed */
+@media (max-width: 768px) {
+    .setting-wrapper {
+        position: fixed !important; /* Force fixed to cover everything */
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 9999 !important; /* Highest priority */
+        border-radius: 0 !important;
+        background-color: var(--primary-backgroundColor); /* Ensure opaque */
+    }
+}

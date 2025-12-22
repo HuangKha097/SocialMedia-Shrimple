@@ -20,13 +20,27 @@
     border-bottom: 1px solid var(--primary-borderColor);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start; /* Changed from space-between to flex-start for alignment */
+    gap: 1.5rem;
     height: 8rem; /* approximate match to typical header height */
     
     h2 {
         font-size: 2rem;
         font-weight: 600;
         color: var(--primary-textColor);
+    }
+
+    .mobile-menu-btn {
+        display: none;
+        background: transparent;
+        border: none;
+        color: var(--primary-textColor);
+        cursor: pointer;
+        padding: 0;
+
+        @media (max-width: 768px) {
+            display: flex;
+        }
     }
 }
 
@@ -325,18 +339,39 @@
             gap: 1.2rem;
             
             .comment {
+                display: flex;
+                align-items: flex-start;
                 font-size: 1.4rem;
-                background-color: rgba(255,255,255,0.02);
-                padding: 1rem;
-                border-radius: 0.8rem;
+                background-color: transparent; /* Changed from rounded box to standard list style usually, but keeping box is fine */
+                /* If using avatars, I might remove the background on the container and put it on the text bubble */
+                margin-bottom: 0.5rem;
                 
-                strong {
-                    margin-right: 0.5rem;
-                    color: var(--primary-color);
-                    font-weight: 500;
+                .comment-avatar {
+                    flex-shrink: 0;
+                    margin-top: 0.2rem;
                 }
-                span {
-                    color: #ddd;
+                
+                .comment-content {
+                    background-color: rgba(255,255,255,0.05);
+                    padding: 0.8rem 1.2rem;
+                    border-radius: 1.2rem;
+                    display: flex;
+                    flex-direction: column;
+                    
+                    strong {
+                        color: var(--primary-textColor);
+                        font-weight: 600;
+                        font-size: 1.3rem;
+                        
+                        &:hover {
+                            text-decoration: underline;
+                        }
+                    }
+                    
+                    span {
+                        color: #ddd;
+                        line-height: 1.4;
+                    }
                 }
             }
         }
