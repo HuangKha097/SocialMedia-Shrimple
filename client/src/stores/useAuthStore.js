@@ -5,7 +5,7 @@ import {authService} from "../services/authService.js";
 import {useChatStore} from "./useChatStore.js";
 import { io } from "socket.io-client";
 
-const BASE_URL = "http://localhost:5001"; // Or from env
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001" : "https://shrimple.onrender.com";
 
 export const useAuthStore = create(
     persist(
