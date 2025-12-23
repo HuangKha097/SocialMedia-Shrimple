@@ -56,7 +56,8 @@ const ChatPage = () => {
 
     const handleLogout = async () => {
         try {
-            await signOut()
+            const confirmLogout = confirm("Do you want to sign out ?")
+            confirmLogout ? await signOut() : "" ;
         } catch (err) {
             toast.error(err.message);
             console.log(err)

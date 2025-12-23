@@ -5,14 +5,15 @@ import Message from './Message.jsx';
 import { useChatStore } from "../../stores/useChatStore.js";
 import { useAuthStore } from "../../stores/useAuthStore.js";
 import defaultAvatar from "../../../public/favicon.png";
+import LoadingSpin from "../common/loading/LoadingSpin.jsx";
 
 const cx = classNames.bind(styles);
 
 const ChatBody = () => {
     // Lấy thêm fetchMessages từ store
-    const { messages, activeConversationId, conversations, fetchMessages, reactToMessageAction, friends } = useChatStore();
+    const { messages, activeConversationId, conversations, fetchMessages, reactToMessageAction, friends , messageLoading} = useChatStore();
     const { user: currentUser } = useAuthStore();
-
+    console.log("Loading:", messageLoading)
     const endOfMessagesRef = useRef(null);
 
     // Tìm conversation hiện tại
@@ -103,59 +104,81 @@ const ChatBody = () => {
             avatar: getAvatarSrc(sender?.avatarURL)
         };
     };
-
     return (
-        <div
-            className={cx('chat-body-wrapper')}
-            ref={containerRef}
-            onScroll={handleScroll}
-        >
+        messageLoading ? (
+            <LoadingSpin size={30} />
+        ) : (
+            <div
+                className={cx('chat-body-wrapper')}
+                ref={containerRef}
+                onScroll={handleScroll}
+            >
 
-            {/* Loading Indicator for older messages */}
-            {hasMore && isFetchingRef.current && (
-                <div style={{ textAlign: 'center', padding: '10px', color: '#888' }}>
-                    Loading...
-                </div>
-            )}
+                {/* Loading Indicator for older messages */}
+                {hasMore && isFetchingRef.current && (
+                    <div style={{ textAlign: 'center', padding: '10px', color: '#888' }}>
+                        Loading...
+                    </div>
+                )}
 
-            {/* Hiển thị thông báo nếu chưa có tin nhắn */}
-            {messageList.length === 0 && (
-                <div style={{ textAlign: 'center', marginTop: '20px', color: '#999', fontSize: '0.9rem' }}>
-                    Send a message to start the conversation!
-                </div>
-            )}
+                {/* Hiển thị thông báo nếu chưa có tin nhắn */}
+                {messageList.length === 0 && (
+                    <div
+                        style={{
+                            textAlign: 'center',
+                            marginTop: '20px',
+                            color: '#999',
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        Send a message to start the conversation!
+                    </div>
+                )}
 
-            {messageList.map((message, index) => {
-                // --- FIX QUAN TRỌNG: Xử lý senderId là Object hay String ---
-                const senderId = typeof message.senderId === 'object'
-                    ? message.senderId?._id
-                    : message.senderId;
+                {messageList.map((message, index) => {
+                    const senderId =
+                        typeof message.senderId === 'object'
+                            ? message.senderId?._id
+                            : message.senderId;
 
-                const isMe = message.isOwn !== undefined
-                    ? message.isOwn
-                    : (currentUser?._id && senderId === currentUser._id);
+                    const isMe =
+                        message.isOwn !== undefined
+                            ? message.isOwn
+                            : currentUser?._id && senderId === currentUser._id;
 
-                // Lấy thông tin người gửi (chỉ cần lấy nếu không phải là mình)
-                const senderInfo = isMe ? {} : getSenderInfo(senderId);
+                    const senderInfo = isMe ? {} : getSenderInfo(senderId);
 
-                return (
-                    <Message
-                        key={message._id || index}
-                        senderName={isMe ? "Me" : senderInfo.name}
-                        avatar={isMe ? (getAvatarSrc(currentUser?.avatarURL)) : senderInfo.avatar}
-                        text={message.content}
-                        image={message.imgUrl}
-                        isGroup={currentConvo?.isGroup}
-                        time={formatTime(message.createdAt)}
-                        isMe={isMe}
-                        reactions={message.reactions || []}
-                        onReact={(emoji) => reactToMessageAction(message._id, emoji, activeConversationId)}
-                    />
-                );
-            })}
-            <div ref={endOfMessagesRef} />
-        </div>
+                    return (
+                        <Message
+                            key={message._id || index}
+                            senderName={isMe ? 'Me' : senderInfo.name}
+                            avatar={
+                                isMe
+                                    ? getAvatarSrc(currentUser?.avatarURL)
+                                    : senderInfo.avatar
+                            }
+                            text={message.content}
+                            image={message.imgUrl}
+                            isGroup={currentConvo?.isGroup}
+                            time={formatTime(message.createdAt)}
+                            isMe={isMe}
+                            reactions={message.reactions || []}
+                            onReact={(emoji) =>
+                                reactToMessageAction(
+                                    message._id,
+                                    emoji,
+                                    activeConversationId
+                                )
+                            }
+                        />
+                    );
+                })}
+
+                <div ref={endOfMessagesRef} />
+            </div>
+        )
     );
+
 };
 
 export default ChatBody;

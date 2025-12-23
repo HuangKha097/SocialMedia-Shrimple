@@ -43,6 +43,7 @@ export const useChatStore = create(
 
             fetchConversations: async () => {
                 try {
+
                     const {conversations} = await chatService.fetchConversations();
                     set({
                         conversations: conversations,
