@@ -113,7 +113,7 @@ export const unFriend = async (req, res) => {
 
     const friendship = await Friend.findOne({
         $or:[
-            {useA:userId, userB:friendId},
+            {userA:userId, userB:friendId},
             {userA:friendId, userB: userId}
         ]
     });

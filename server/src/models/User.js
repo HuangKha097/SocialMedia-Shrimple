@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema(
             ref: "User",
             default: []
         }],
+        antiPeepData: {
+            isEnabled: { type: Boolean, default: false },
+            faceDescriptor: { type: [Number], default: [] },
+            pin: { type: String, default: "" }
+        },
         settings: {
             soundEnabled: { type: Boolean, default: true },
             desktopNotifications: { type: Boolean, default: false }

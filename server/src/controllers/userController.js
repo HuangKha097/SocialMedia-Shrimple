@@ -228,3 +228,30 @@ export const getBlockedUsers = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const updateAntiPeepSettings = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { isEnabled, pin, faceDescriptor } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.antiPeepData === undefined) {
+             user.antiPeepData = { isEnabled: false, pin: "", faceDescriptor: [] };
+        }
+
+        if (isEnabled !== undefined) user.antiPeepData.isEnabled = isEnabled;
+        if (pin !== undefined) user.antiPeepData.pin = pin;
+        if (faceDescriptor !== undefined) {
+            // faceDescriptor comes as array/object values, ensure it's stored as array
+            user.antiPeepData.faceDescriptor = Object.values(faceDescriptor);
+        }
+
+        await user.save();
+        return res.status(200).json(user.antiPeepData);
+    } catch (error) {
+        console.error("Error updateAntiPeepSettings:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

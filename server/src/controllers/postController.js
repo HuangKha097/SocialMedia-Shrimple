@@ -161,19 +161,29 @@ export const getAllPosts = async (req, res) => {
         // 2. Add current user to list (to see own posts)
         const allowedAuthors = [...friendIds, userId];
 
-        const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        const cursor = req.query.cursor; // Cursor is the ISO date string of the last post
+
+        const query = { author: { $in: allowedAuthors } };
+        
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
 
         // 3. Find posts only from friends and self
-        const posts = await Post.find({ author: { $in: allowedAuthors } })
+        const posts = await Post.find(query)
             .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
+            .limit(limit + 1) // Fetch 1 extra to check if there are more
             .populate("author", "username displayName avatarURL")
             .populate("comments.postedBy", "username displayName avatarURL");
 
-        res.status(200).json(posts);
+        let nextCursor = null;
+        if (posts.length > limit) {
+            const nextPost = posts.pop(); // Remove the extra post
+            nextCursor = nextPost.createdAt.toISOString();
+        }
+
+        res.status(200).json({ posts, nextCursor });
     } catch (error) {
         console.error("Error in getAllPosts controller: ", error.message);
         res.status(500).json({ message: "Internal Server Error" });
@@ -182,27 +192,31 @@ export const getAllPosts = async (req, res) => {
 
 export const getVideoFeed = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        //limit video feed
-        const limit = parseInt(req.query.limit) || 5; // Smaller chunks for videos
-        const skip = (page - 1) * limit;
+        const limit = parseInt(req.query.limit) || 5;
+        const cursor = req.query.cursor;
+
+        const query = { 
+            video: { $exists: true, $ne: "" } 
+        };
+
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
 
         // Global Video Feed: Find any posts with videos
-        const posts = await Post.find({ 
-            video: { $exists: true, $ne: "" } 
-        })
+        const posts = await Post.find(query)
             .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
+            .limit(limit + 1)
             .populate("author", "username displayName avatarURL")
             .populate("comments.postedBy", "username displayName avatarURL");
 
-        // If no posts are found, just return empty list
-        // Data nodes test removed as requested
-        res.status(200).json(posts);
-        return;
+        let nextCursor = null;
+        if (posts.length > limit) {
+            const nextPost = posts.pop();
+            nextCursor = nextPost.createdAt.toISOString();
+        }
 
-        res.status(200).json(posts);
+        res.status(200).json({ posts, nextCursor });
     } catch (error) {
         console.error("Error in getVideoFeed controller: ", error.message);
         res.status(500).json({ message: "Internal Server Error" });

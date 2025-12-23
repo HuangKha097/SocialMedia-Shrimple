@@ -20,29 +20,30 @@ const PostsContainer = () => {
     const [newPostMedia, setNewPostMedia] = useState(null);
 
     // Pagination State
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+    // Removed local page/hasMore state in favor of store state
+    const { hasMorePosts } = usePostStore();
+
+    // We can use a ref or flag to prevent double-fetching on mount if strict mode doubles it, 
+    // but React Query or similar is better. With simple store:
+
     const observer = useRef(null);
     const lastPostElementRef = React.useCallback(node => {
         if (isLoading) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore) {
-                setPage(prevPage => prevPage + 1);
+            if (entries[0].isIntersecting && hasMorePosts) {
+                fetchPosts(false); // Load next page
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoading, hasMore]);
+    }, [isLoading, hasMorePosts, fetchPosts]);
 
     useEffect(() => {
-        const loadPosts = async () => {
-            const newPosts = await fetchPosts(page);
-            if (newPosts && newPosts.length < 10) { // Limit is 10
-                setHasMore(false);
-            }
+        const loadInitialPosts = async () => {
+            await fetchPosts(true); // Initial load (refresh)
         };
-        loadPosts();
-    }, [page, fetchPosts]);
+        loadInitialPosts();
+    }, [fetchPosts]); // fetchPosts should be stable from zustand
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim() && !newPostMedia) return;
@@ -72,7 +73,7 @@ const PostsContainer = () => {
                     media={newPostMedia}
                     setMedia={setNewPostMedia}
                     onSubmit={handleCreatePost}
-                    isLoading={isLoading && page === 1} // Only show spinner on button if initial load? Or handle separate loading state
+                    isLoading={isLoading && posts.length === 0} // Only show spinner on button if initial load? Or handle separate loading state
                 />
 
                 {posts.map((post, index) => {
@@ -102,13 +103,13 @@ const PostsContainer = () => {
                     }
                 })}
 
-                {isLoading && page > 1 && (
+                {isLoading && posts.length > 0 && (
                     <div style={{ textAlign: 'center', padding: '1rem', color: '#888' }}>
                         Loading more...
                     </div>
                 )}
 
-                {!hasMore && posts.length > 0 && (
+                {!hasMorePosts && posts.length > 0 && (
                     <div style={{ textAlign: 'center', padding: '1rem', color: '#888' }}>
                         You have reached the end of the feed.
                     </div>

@@ -172,7 +172,7 @@ const VideoItem = ({ post, isActive, toggleLike, toggleMute, isMuted, volume, on
 };
 
 const VideoFeed = () => {
-    const { videoPosts, fetchVideoFeed, likePost, deletePost } = usePostStore();
+    const { videoPosts, fetchVideoFeed, likePost, deletePost, hasMoreVideos } = usePostStore();
     // Default to no-op function if context is missing (e.g. standalone test)
     const { toggleSidebar, isSidebarOpen = true } = useOutletContext() || { toggleSidebar: () => { }, isSidebarOpen: true };
     const [activePostId, setActivePostId] = useState(() => {
@@ -198,6 +198,7 @@ const VideoFeed = () => {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const observer = useRef(null);
     const containerRef = useRef(null);
+    const isLoadingRef = useRef(false);
 
     // Save to LocalStorage whenever they change
     useEffect(() => {
@@ -221,9 +222,9 @@ const VideoFeed = () => {
     // 1. Fetch only if empty
     useEffect(() => {
         if (videoPosts.length === 0) {
-            fetchVideoFeed(1);
+            fetchVideoFeed(true); // Initial load
         }
-    }, [videoPosts.length, fetchVideoFeed]);
+    }, [fetchVideoFeed]); // videoPosts.length dependency removed to avoid infinite loop if fetch fails or logic differs
 
     // 2. Restore Scroll Position
     useEffect(() => {
@@ -241,7 +242,7 @@ const VideoFeed = () => {
             // If no active ID but we have posts, just show them
             setIsScrollRestored(true);
         }
-    }, [videoPosts.length]); // Run when posts are ready/loaded
+    }, [videoPosts.length]); // Run when posts are ready/loaded during restoration phase
 
     // Intersection Observer logic
     useEffect(() => {
@@ -272,11 +273,12 @@ const VideoFeed = () => {
         }
     }, [videoPosts]); // Re-run observer when posts change
 
-    const handleScroll = (e) => {
-        const bottom = Math.abs(e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight) < 150;
-        if (bottom) {
-            const nextPage = Math.floor(videoPosts.length / 5) + 1;
-            fetchVideoFeed(nextPage);
+    const handleScroll = async (e) => {
+        const bottom = Math.abs(e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight) < 300;
+        if (bottom && hasMoreVideos && !isLoadingRef.current) {
+            isLoadingRef.current = true;
+            await fetchVideoFeed(false);
+            isLoadingRef.current = false;
         }
     };
 

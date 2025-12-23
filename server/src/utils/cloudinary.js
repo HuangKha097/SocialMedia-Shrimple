@@ -12,7 +12,7 @@ cloudinary.config({
 
 // Check for missing keys
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    console.error("⚠️  Cloudinary API keys are missing in .env file! Media uploads will fail.");
+    console.error("Cloudinary API keys are missing in .env file! Media uploads will fail.");
 }
 
 const uploadToCloudinary = async (localFilePath, folder = "shrimple_chat") => {

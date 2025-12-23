@@ -22,6 +22,9 @@ import { useUIStore } from "./stores/useUIStore.js";
 // import LoadingSpin from "./components/common/loading/LoadingSpin.jsx"; // Removed from here
 
 
+import { AntiPeepProvider } from "./components/anti-peep/AntiPeepProvider.jsx";
+
+
 // Wrapper to consume outlet context and pass it to ChatContainer
 const ChatContainerWrapper = () => {
     const context = useOutletContext();
@@ -73,12 +76,10 @@ const App = () => {
     }, [setOffline]);
 
     return (
-        <>
+        <AntiPeepProvider>
             <Toaster richColors />
 
             <CallModal />
-
-
 
             <BrowserRouter>
                 <Routes>
@@ -101,7 +102,7 @@ const App = () => {
                     </Route>
                 </Routes>
             </BrowserRouter>
-        </>
+        </AntiPeepProvider>
     );
 };
 

@@ -4,27 +4,58 @@ import { toast } from "sonner";
 
 export const usePostStore = create((set, get) => ({
     posts: [],
+    userPosts: [],
+    savedPosts: [],
     videoPosts: [],
+    postsNextCursor: null,
+    hasMorePosts: true,
+    
+    videoNextCursor: null,
+    hasMoreVideos: true,
+    
     isLoading: false,
 
-    fetchPosts: async (page = 1, limit = 10) => {
-        if (page === 1) set({ isLoading: true });
+    fetchPosts: async (isRefresh = false) => {
+        const { postsNextCursor, hasMorePosts, isLoading } = get();
+        if (isLoading) return;
+
+        // If not refreshing and no more posts, do nothing
+        if (!isRefresh && !hasMorePosts) return;
+
+        set({ isLoading: true });
         try {
-            const res = await api.get(`/api/posts?page=${page}&limit=${limit}`);
-            if (page === 1) {
-                set({ posts: res.data });
-            } else {
-                set((state) => ({
-                    posts: [...state.posts, ...res.data.filter(p => !state.posts.some(existing => existing._id === p._id))]
-                }));
-            }
-            return res.data; // Return data so UI knows if it should stop fetching
+            const cursor = isRefresh ? null : postsNextCursor;
+            const query = cursor ? `?limit=10&cursor=${cursor}` : `?limit=10`;
+            
+            const res = await api.get(`/api/posts${query}`);
+            const { posts: newPosts, nextCursor } = res.data;
+
+            set((state) => ({
+                posts: isRefresh ? newPosts : [...state.posts, ...newPosts],
+                postsNextCursor: nextCursor,
+                hasMorePosts: !!nextCursor
+            }));
+            
+            return newPosts;
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || "Failed to fetch posts");
             return [];
         } finally {
-            if (page === 1) set({ isLoading: false });
+            set({ isLoading: false });
+        }
+    },
+
+    fetchUserPosts: async (userId) => {
+        set({ isLoading: true });
+        try {
+            const res = await api.get(`/api/posts/user/${userId}`);
+            set({ userPosts: res.data });
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to fetch user posts");
+        } finally {
+            set({ isLoading: false });
         }
     },
 
@@ -33,32 +64,26 @@ export const usePostStore = create((set, get) => ({
         try {
 
             let dataToSend = postData;
-            let headers = {};
-
+            // ... (keep existing Logic for FormData vs JSON)
             if (postData.image instanceof File) {
                 const formData = new FormData();
                 formData.append("content", postData.content);
                 formData.append("media", postData.image);
                 dataToSend = formData;
-                // headers = { "Content-Type": "multipart/form-data" }; // Let browser/axios set this
             }
 
-            const res = await api.post("/api/posts/create", dataToSend); // removed explicit headers
+            const res = await api.post("/api/posts/create", dataToSend); 
             
             const newPost = res.data;
             
             set((state) => {
                 const posts = [newPost, ...state.posts];
                 
-                // If it's a video, add to videoPosts too, ensuring no duplicates
+                // Keep video logic
                 let videoPosts = state.videoPosts;
-                // Basic check if it's a video (assuming content type or backend flag, typically check media url or type)
-                // However, for now we just push it if we are in video context or just let fetch reload it.
-                // Better: Check if newPost has video media.
-                // Assuming backend returns 'mediaType' or we infer from url.
-                const isVideo = newPost.mediaUrl && (newPost.mediaUrl.endsWith('.mp4') || newPost.mediaType === 'video');
+                const isVideo = newPost.video || (newPost.mediaUrl && (newPost.mediaUrl.endsWith('.mp4') || newPost.mediaType === 'video'));
                 
-                if (isVideo || newPost.mediaUrl) { // Broad check for now as we only upload videos in that modal
+                if (isVideo) { 
                      videoPosts = [newPost, ...state.videoPosts];
                 }
                 
@@ -76,24 +101,30 @@ export const usePostStore = create((set, get) => ({
     likePost: async (postId) => {
         try {
             const res = await api.put(`/api/posts/like/${postId}`);
-            // Update local state is tricky because we need the full updated post or handle it manually.
-            // The API returns the updated post.
-            set((state) => ({
-                posts: state.posts.map((post) => (post._id === postId ? res.data : post)),
-                videoPosts: state.videoPosts.map((post) => (post._id === postId ? res.data : post)), // Also update video feed
+            const updatedPost = res.data;
+            
+            set(state => ({
+                posts: state.posts.map(p => p._id === postId ? updatedPost : p),
+                videoPosts: state.videoPosts.map(p => p._id === postId ? updatedPost : p),
+                userPosts: state.userPosts.map(p => p._id === postId ? updatedPost : p),
+                savedPosts: state.savedPosts.map(p => p._id === postId ? updatedPost : p)
             }));
         } catch (error) {
             console.error(error);
-            toast.error(error.response?.data?.message || "Failed to like post");
+            toast.error("Failed to like post");
         }
     },
 
     addComment: async (postId, text) => {
         try {
             const res = await api.put(`/api/posts/comment/${postId}`, { text });
-            set((state) => ({
-                posts: state.posts.map((post) => (post._id === postId ? res.data : post)),
-                videoPosts: state.videoPosts.map((post) => (post._id === postId ? res.data : post)), // Also update video feed
+            const updatedPost = res.data;
+
+            set(state => ({
+                posts: state.posts.map(p => p._id === postId ? updatedPost : p),
+                videoPosts: state.videoPosts.map(p => p._id === postId ? updatedPost : p),
+                userPosts: state.userPosts.map(p => p._id === postId ? updatedPost : p),
+                savedPosts: state.savedPosts.map(p => p._id === postId ? updatedPost : p)
             }));
             toast.success("Comment added");
         } catch (error) {
@@ -105,49 +136,48 @@ export const usePostStore = create((set, get) => ({
     deletePost: async (postId) => {
         try {
             await api.delete(`/api/posts/${postId}`);
-            set((state) => ({
-                posts: state.posts.filter((post) => post._id !== postId),
+            
+            set(state => ({
+                posts: state.posts.filter(p => p._id !== postId),
+                videoPosts: state.videoPosts.filter(p => p._id !== postId),
+                userPosts: state.userPosts.filter(p => p._id !== postId),
+                savedPosts: state.savedPosts.filter(p => p._id !== postId)
             }));
             toast.success("Post deleted");
         } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Failed to delete post");
+             console.error(error);
+             toast.error(error.response?.data?.message || "Failed to delete post");
         }
     },
 
-    savedPosts: [], 
-    userPosts: [],
-
-    fetchUserPosts: async (userId) => {
-        set({ isLoading: true });
+    fetchVideoFeed: async (isRefresh = false) => {
+         const { videoNextCursor, hasMoreVideos, isLoading } = get();
+         // If already loading, maybe debounce or ignore, but here simple check
+         // We might want separate loading state for video feed if they can load purely independently without UI conflict
+         
+         if (!isRefresh && !hasMoreVideos) return;
+         
         try {
-            const res = await api.get(`/api/posts/user/${userId}`);
-            set({ userPosts: res.data });
-        } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Failed to fetch user posts");
-        } finally {
-            set({ isLoading: false });
-        }
-    },
+            const cursor = isRefresh ? null : videoNextCursor;
+            const query = cursor ? `?limit=5&cursor=${cursor}` : `?limit=5`;
 
-    fetchVideoFeed: async (page = 1) => {
-        try {
-            const res = await api.get(`/api/posts/videos?page=${page}&limit=5`);
-            if (page === 1) {
-                set({ videoPosts: res.data });
-            } else {
-                set(state => {
-                    // Filter out any incoming posts that already exist in the state by ID
-                    const existingIds = new Set(state.videoPosts.map(p => p._id));
-                    const newPosts = res.data.filter(newPost => !existingIds.has(newPost._id));
-                    
-                    if (newPosts.length === 0) return {}; // No new posts to add
-                    
-                    return { videoPosts: [...state.videoPosts, ...newPosts] };
-                });
-            }
-            return res.data;
+            const res = await api.get(`/api/posts/videos${query}`);
+            
+            const { posts: newVideos, nextCursor } = res.data;
+
+            set(state => {
+                 // For refresh, replace. For load more, append.
+                 const videos = isRefresh ? newVideos : [...state.videoPosts, ...newVideos];
+                 
+                 // Deduplicate if needed (though cursor should prevent it mostly)
+                 // Keeping simple strictly cursor based now.
+                return { 
+                    videoPosts: videos,
+                    videoNextCursor: nextCursor,
+                    hasMoreVideos: !!nextCursor
+                };
+            });
+            return newVideos;
         } catch (error) {
             console.error(error);
             toast.error("Failed to load videos");
