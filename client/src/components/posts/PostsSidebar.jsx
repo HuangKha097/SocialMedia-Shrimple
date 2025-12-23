@@ -109,7 +109,7 @@ const PostsSidebar = ({ onCloseSetting }) => {
                         <Video size={24} />
                         <span>Video</span>
                     </div>
-                    <div className={cx('menu-item')}>
+                    <div className={cx('menu-item')} onClick={()=>alert("Marketplace is coming soon")}>
                         <Store size={24} />
                         <span>Marketplace</span>
                     </div>

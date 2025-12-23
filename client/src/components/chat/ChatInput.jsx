@@ -190,13 +190,13 @@ const ChatInput = () => {
                         >
                             <ImageIcon size={20} />
                         </button>
-                        <button className={cx('btn', 'action-item')} title="Camera">
+                        <button className={cx('btn', 'action-item')} title="Camera" onClick={()=> alert("Camera is coming soon")}>
                             <Camera size={20} />
                         </button>
-                        <button className={cx('btn', 'action-item')} title="File">
+                        <button className={cx('btn', 'action-item')} title="File" onClick={()=> alert("File upload is coming soon")}>
                             <File size={20} />
                         </button>
-                        <button className={cx('btn', 'action-item')} title="Location">
+                        <button className={cx('btn', 'action-item')} title="Location" onClick={()=>alert("Location is coming soon")}>
                             <MapPin size={20} />
                         </button>
                     </div>
