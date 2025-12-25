@@ -133,6 +133,58 @@ export const usePostStore = create((set, get) => ({
         }
     },
 
+    reactToComment: async (postId, commentId, reaction) => {
+        try {
+            const res = await api.put(`/api/posts/${postId}/comment/${commentId}/like`, { reaction });
+            const updatedPost = res.data;
+            
+             set(state => ({
+                posts: state.posts.map(p => p._id === postId ? updatedPost : p),
+                videoPosts: state.videoPosts.map(p => p._id === postId ? updatedPost : p),
+                userPosts: state.userPosts.map(p => p._id === postId ? updatedPost : p),
+                savedPosts: state.savedPosts.map(p => p._id === postId ? updatedPost : p)
+            }));
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to react to comment");
+        }
+    },
+
+    replyComment: async (postId, commentId, text) => {
+        try {
+            const res = await api.post(`/api/posts/${postId}/comment/${commentId}/reply`, { text });
+            const updatedPost = res.data;
+            
+             set(state => ({
+                posts: state.posts.map(p => p._id === postId ? updatedPost : p),
+                videoPosts: state.videoPosts.map(p => p._id === postId ? updatedPost : p),
+                userPosts: state.userPosts.map(p => p._id === postId ? updatedPost : p),
+                savedPosts: state.savedPosts.map(p => p._id === postId ? updatedPost : p)
+            }));
+            toast.success("Reply added");
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to reply");
+        }
+    },
+
+    reactToReply: async (postId, commentId, replyId, reaction) => {
+        try {
+             const res = await api.put(`/api/posts/${postId}/comment/${commentId}/reply/${replyId}/like`, { reaction });
+             const updatedPost = res.data;
+             
+              set(state => ({
+                posts: state.posts.map(p => p._id === postId ? updatedPost : p),
+                videoPosts: state.videoPosts.map(p => p._id === postId ? updatedPost : p),
+                userPosts: state.userPosts.map(p => p._id === postId ? updatedPost : p),
+                savedPosts: state.savedPosts.map(p => p._id === postId ? updatedPost : p)
+            }));
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to react to reply");
+        }
+    },
+
     deletePost: async (postId) => {
         try {
             await api.delete(`/api/posts/${postId}`);

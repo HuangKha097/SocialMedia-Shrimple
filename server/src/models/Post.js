@@ -34,6 +34,34 @@ const postSchema = new mongoose.Schema(
                     type: mongoose.Schema.Types.ObjectId,
                     ref: "User",
                 },
+                reactions: [
+                    {
+                        userId: {
+                            type: mongoose.Schema.Types.ObjectId,
+                            ref: "User",
+                        },
+                        reaction: String,
+                    },
+                ],
+                replies: [
+                    {
+                        text: String,
+                        created: { type: Date, default: Date.now },
+                        postedBy: {
+                            type: mongoose.Schema.Types.ObjectId,
+                            ref: "User",
+                        },
+                        reactions: [
+                            {
+                                userId: {
+                                    type: mongoose.Schema.Types.ObjectId,
+                                    ref: "User",
+                                },
+                                reaction: String,
+                            },
+                        ],
+                    },
+                ],
             },
         ],
     },

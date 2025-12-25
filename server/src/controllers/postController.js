@@ -175,7 +175,8 @@ export const getAllPosts = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(limit + 1) // Fetch 1 extra to check if there are more
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         let nextCursor = null;
         if (posts.length > limit) {
@@ -208,7 +209,8 @@ export const getVideoFeed = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(limit + 1)
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         let nextCursor = null;
         if (posts.length > limit) {
@@ -229,7 +231,8 @@ export const getUserPosts = async (req, res) => {
         const posts = await Post.find({ author: userId })
             .sort({ createdAt: -1 })
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         res.status(200).json(posts);
     } catch (error) {
@@ -262,7 +265,8 @@ export const likePost = async (req, res) => {
         
         const updatedPost = await Post.findById(postId)
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         res.status(200).json(updatedPost);
     } catch (error) {
@@ -296,7 +300,8 @@ export const addComment = async (req, res) => {
         // Re-fetch to populate comment user details
         const updatedPost = await Post.findById(postId)
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         res.status(200).json(updatedPost);
     } catch (error) {
@@ -329,7 +334,8 @@ export const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
             .populate("author", "username displayName avatarURL")
-            .populate("comments.postedBy", "username displayName avatarURL");
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
 
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
@@ -339,5 +345,122 @@ export const getPostById = async (req, res) => {
     } catch (error) {
         console.error("Error in getPostById controller: ", error.message);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const reactToComment = async (req, res) => {
+    try {
+        const { postId, commentId } = req.params;
+        const { reaction } = req.body;
+        const userId = req.user._id;
+
+        const post = await Post.findById(postId);
+        if (!post) return res.status(404).json({ message: "Post not found" });
+
+        const comment = post.comments.id(commentId);
+        if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+        const existingReactionIndex = comment.reactions.findIndex(r => r.userId.toString() === userId.toString());
+
+        if (existingReactionIndex > -1) {
+            const existingReaction = comment.reactions[existingReactionIndex];
+            if (existingReaction.reaction === reaction) {
+                // Toggle off if same reaction
+                comment.reactions.splice(existingReactionIndex, 1);
+            } else {
+                // Change reaction
+                existingReaction.reaction = reaction;
+            }
+        } else {
+            comment.reactions.push({ userId, reaction });
+        }
+
+        await post.save();
+
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error("Error in reactToComment:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const replyComment = async (req, res) => {
+    try {
+        const { postId, commentId } = req.params;
+        const { text } = req.body;
+        const userId = req.user._id;
+
+        if (!text) return res.status(400).json({ message: "Reply text is required" });
+
+        const post = await Post.findById(postId);
+        if (!post) return res.status(404).json({ message: "Post not found" });
+
+        const comment = post.comments.id(commentId);
+        if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+        comment.replies.push({
+            text,
+            postedBy: userId,
+            created: new Date()
+        });
+
+        await post.save();
+
+         const updatedPost = await Post.findById(postId)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error("Error in replyComment:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const reactToReply = async (req, res) => {
+    try {
+        const { postId, commentId, replyId } = req.params;
+        const { reaction } = req.body;
+        const userId = req.user._id;
+
+        const post = await Post.findById(postId);
+        if (!post) return res.status(404).json({ message: "Post not found" });
+
+        const comment = post.comments.id(commentId);
+        if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+        const reply = comment.replies.id(replyId);
+        if (!reply) return res.status(404).json({ message: "Reply not found" });
+
+        const existingReactionIndex = reply.reactions.findIndex(r => r.userId.toString() === userId.toString());
+
+        if (existingReactionIndex > -1) {
+             const existingReaction = reply.reactions[existingReactionIndex];
+             if (existingReaction.reaction === reaction) {
+                 reply.reactions.splice(existingReactionIndex, 1);
+             } else {
+                 existingReaction.reaction = reaction;
+             }
+        } else {
+            reply.reactions.push({ userId, reaction });
+        }
+
+        await post.save();
+
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "username displayName avatarURL")
+            .populate("comments.postedBy", "username displayName avatarURL")
+            .populate("comments.replies.postedBy", "username displayName avatarURL");
+
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error("Error in reactToReply:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 };

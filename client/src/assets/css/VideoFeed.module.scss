@@ -517,3 +517,123 @@
         opacity: 0.9;
     }
 }
+
+/* Comment Reply Styles */
+.comment-actions {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    
+    .text-btn {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        font-weight: 500;
+        
+        &:hover {
+            text-decoration: underline;
+        }
+        
+        &.liked {
+            color: #ef4444; /* Red color for liked state */
+        }
+    }
+}
+
+/* Reply Input Form */
+.reply-form {
+    margin-left: 40px; /* Indent under avatar */
+    margin-top: 0.8rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    
+    input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #444;
+        color: white;
+        padding: 0.5rem 0;
+        font-size: 1.3rem;
+        width: 100%;
+        outline: none;
+        
+        &:focus {
+            border-color: #888;
+        }
+    }
+    
+    button {
+        background: none;
+        border: none;
+        color: var(--primary-color, #2ecc71);
+        font-weight: 600;
+        font-size: 1.3rem;
+        cursor: pointer;
+        
+        &:disabled {
+            color: #555;
+        }
+    }
+}
+
+/* Nested Replies Section */
+.replies-section {
+    margin-left: 40px; /* Indent replies */
+    margin-top: 0.5rem;
+    
+    .view-replies-btn, .hide-replies-btn {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 1px;
+            background-color: #888;
+        }
+        
+        &:hover {
+            color: #ccc;
+            &::before { background-color: #ccc; }
+        }
+    }
+    
+    .replies-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        
+        .reply-item {
+             /* Adjust dimensions for replies if needed, reusing comment-item layout */
+             .small-avatar {
+                 width: 24px;
+                 height: 24px;
+             }
+             
+             .comment-content {
+                 /* Slightly smaller font for replies maybe? */
+                 font-size: 1.4rem;
+             }
+        }
+    }
+}
+
+.comment-item-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}

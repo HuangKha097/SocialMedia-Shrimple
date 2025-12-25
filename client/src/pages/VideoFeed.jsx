@@ -344,8 +344,100 @@ const VideoFeed = () => {
 };
 
 
+const VideoCommentItem = ({ comment, postId, currentUserId }) => {
+    const { reactToComment, replyComment, reactToReply } = usePostStore();
+    const [isReplying, setIsReplying] = useState(false);
+    const [replyText, setReplyText] = useState("");
+    const [showReplies, setShowReplies] = useState(false);
+
+    const isLiked = comment.reactions?.some(r => r.userId === currentUserId && r.reaction === 'like');
+    const likeCount = comment.reactions?.filter(r => r.reaction === 'like').length || 0;
+
+    const handleLike = () => {
+        reactToComment(postId, comment._id, "like");
+    };
+
+    const handleReply = async (e) => {
+        e.preventDefault();
+        if (!replyText.trim()) return;
+        await replyComment(postId, comment._id, replyText);
+        setReplyText("");
+        setIsReplying(false);
+        setShowReplies(true); // Auto show replies
+    };
+
+    return (
+        <div className={cx('comment-item-wrapper')}>
+            <div className={cx('comment-item')}>
+                <img src={comment.postedBy?.avatarURL ? (comment.postedBy.avatarURL.startsWith('http') ? comment.postedBy.avatarURL : `http://localhost:5001${comment.postedBy.avatarURL}`) : "/favicon.png"} alt="user" onError={(e) => { e.target.src = "/favicon.png" }} />
+                <div className={cx('comment-content')}>
+                    <span className={cx('comment-user')}>{comment.postedBy?.displayName || 'User'}</span>
+                    <p>{comment.text}</p>
+                    <div className={cx('comment-actions')}>
+                        <span className={cx('comment-date')}>{new Date(comment.created).toLocaleDateString()}</span>
+                        <button className={cx('text-btn', { liked: isLiked })} onClick={handleLike}>
+                            {isLiked ? "Unlike" : "Like"} ({likeCount})
+                        </button>
+                        <button className={cx('text-btn')} onClick={() => setIsReplying(!isReplying)}>Reply</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Replies List */}
+            {comment.replies && comment.replies.length > 0 && (
+                <div className={cx('replies-section')}>
+                    {!showReplies ? (
+                        <button className={cx('view-replies-btn')} onClick={() => setShowReplies(true)}>
+                            View {comment.replies.length} replies
+                        </button>
+                    ) : (
+                        <div className={cx('replies-list')}>
+                            {comment.replies.map((reply, ridx) => {
+                                const isReplyLiked = reply.reactions?.some(r => r.userId === currentUserId && r.reaction === 'like');
+                                const replyLikeCount = reply.reactions?.filter(r => r.reaction === 'like').length || 0;
+
+                                return (
+                                    <div key={ridx} className={cx('comment-item', 'reply-item')}>
+                                        <img src={reply.postedBy?.avatarURL ? (reply.postedBy.avatarURL.startsWith('http') ? reply.postedBy.avatarURL : `http://localhost:5001${reply.postedBy.avatarURL}`) : "/favicon.png"} alt="user" onError={(e) => { e.target.src = "/favicon.png" }} className={cx('small-avatar')} />
+                                        <div className={cx('comment-content')}>
+                                            <span className={cx('comment-user')}>{reply.postedBy?.displayName || 'User'}</span>
+                                            <p>{reply.text}</p>
+                                            <div className={cx('comment-actions')}>
+                                                <span className={cx('comment-date')}>{new Date(reply.created).toLocaleDateString()}</span>
+                                                <button className={cx('text-btn', { liked: isReplyLiked })} onClick={() => reactToReply(postId, comment._id, reply._id, "like")}>
+                                                    {isReplyLiked ? "Unlike" : "Like"} ({replyLikeCount})
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            <button className={cx('hide-replies-btn')} onClick={() => setShowReplies(false)}>Hide replies</button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Reply Input */}
+            {isReplying && (
+                <form onSubmit={handleReply} className={cx('reply-form')}>
+                    <input
+                        type="text"
+                        placeholder={`Reply to ${comment.postedBy?.displayName || 'user'}...`}
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        autoFocus
+                    />
+                    <button type="submit" disabled={!replyText.trim()}>Send</button>
+                </form>
+            )}
+        </div>
+    );
+}
+
 const CommentsDrawer = ({ post, onClose }) => {
     const { addComment } = usePostStore();
+    const { user } = useAuthStore();
     const [text, setText] = useState("");
     const commentsRef = useRef(null);
 
@@ -374,14 +466,12 @@ const CommentsDrawer = ({ post, onClose }) => {
                 <div className={cx('drawer-body')} ref={commentsRef}>
                     {post.comments && post.comments.length > 0 ? (
                         post.comments.map((comment, idx) => (
-                            <div key={idx} className={cx('comment-item')}>
-                                <img src={comment.postedBy?.avatarURL ? (comment.postedBy.avatarURL.startsWith('http') ? comment.postedBy.avatarURL : `http://localhost:5001${comment.postedBy.avatarURL}`) : "/favicon.png"} alt="user" onError={(e) => { e.target.src = "/favicon.png" }} />
-                                <div className={cx('comment-content')}>
-                                    <span className={cx('comment-user')}>{comment.postedBy?.displayName || 'User'}</span>
-                                    <p>{comment.text}</p>
-                                    <span className={cx('comment-date')}>{new Date(comment.created).toLocaleDateString()}</span>
-                                </div>
-                            </div>
+                            <VideoCommentItem
+                                key={idx}
+                                comment={comment}
+                                postId={post._id}
+                                currentUserId={user?._id}
+                            />
                         ))
                     ) : (
                         <div className={cx('no-comments')}>No comments yet. Be the first!</div>

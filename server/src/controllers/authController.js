@@ -5,7 +5,7 @@ import crypto from "crypto"
 import Session from "../models/Session.js";
 
 const ACCESS_TOKEN_TTL = '15m' // less than equal 15m, 30m cuz wanna test API
-const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14days
+const REFRESH_TOKEN_TTL = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export const signUp = async (req, res) => {
     try {
@@ -72,7 +72,7 @@ export const signIn = async (req, res) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Email or phone is not exits"
+                message: "Email or phone does not exist"
             })
         }
 
